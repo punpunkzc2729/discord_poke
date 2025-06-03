@@ -9,8 +9,8 @@ import threading
 import logging
 
 # ตั้งค่า Token ของบอท
-TOKEN = "MTA1Njk1MTE2NTk0MzgxNjMwMw.GTMIod.Skx5lJA-rkbHZWgHRBYU_LiPk4hUuGoqVU_mkA"
-YOUR_GUILD_ID=575267060569997322
+TOKEN = ""
+YOUR_GUILD_ID=
 
 # ตั้งค่า intents
 intents = discord.Intents.default()
