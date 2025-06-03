@@ -10,7 +10,7 @@ import logging
 
 TOKEN = "your_bot_token"
 
-YOUR_GUILD_ID = "your_guild_id"
+YOUR_GUILD_ID = 123456789012345678
 
 # ตั้งค่า intents
 intents = discord.Intents.default()
