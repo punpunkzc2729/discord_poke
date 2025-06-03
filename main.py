@@ -12,7 +12,7 @@ load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 
-YOUR_GUILD_ID = 123456789012345678
+YOUR_GUILD_ID = int(os.environ["GUILD_ID"])
 
 # ตั้งค่า intents
 intents = discord.Intents.default()
