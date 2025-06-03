@@ -214,5 +214,8 @@ def volume_down():
 def run_web():
     app.run(host="0.0.0.0", port=5000)
 
-threading.Thread(target=run_web).start()
+if __name__ == "__main__":
+    threading.Thread(target=lambda: bot.run(TOKEN)).start()
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
 bot.run(TOKEN)
