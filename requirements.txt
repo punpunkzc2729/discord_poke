@@ -4,3 +4,4 @@ gtts
 yt-dlp
 logging
 python-dotenv
+PyNaCl
