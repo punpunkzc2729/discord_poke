@@ -1,0 +1,98 @@
+body {
+    background-color: #121212;
+    color: #FFFFFF;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 20px;
+    background-color: #1E1E1E;
+    border-radius: 15px;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #FF9800;
+}
+
+.queue {
+    margin: 20px 0;
+    padding: 15px;
+    background-color: #2C2C2C;
+    border-radius: 10px;
+}
+
+.queue p {
+    margin: 5px 0;
+    word-break: break-all;
+}
+
+form {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+input[type="text"] {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background-color: #333;
+    color: #FFF;
+}
+
+button, .button {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 50px;
+    background-color: #FF9800;
+    color: #FFF;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+button:hover, .button:hover {
+    background-color: #FFA726;
+    transform: scale(1.05);
+}
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+a.button {
+    text-align: center;
+    min-width: 100px;
+}
+
+.footer {
+    margin-top: 50px;
+    text-align: center;
+    font-size: 0.9em;
+    color: #666;
+}
+
+@media (max-width: 600px) {
+    .controls {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    input[type="text"] {
+        font-size: 16px;
+    }
+}
