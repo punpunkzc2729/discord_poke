@@ -3,3 +3,4 @@ flask
 gtts
 yt-dlp
 logging
+python-dotenv

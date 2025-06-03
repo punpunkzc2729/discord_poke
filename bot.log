@@ -387,3 +387,39 @@ discord.app_commands.errors.CommandInvokeError: Command 'play' raised an excepti
 2025-06-03 17:32:01,142:INFO:Shard ID None session has been invalidated.
 2025-06-03 17:32:06,855:INFO:The voice handshake is being terminated for Channel ID 1343949078014332990 (Guild ID 738709617571528735)
 2025-06-03 17:32:06,856:INFO:Reconnect was unsuccessful, disconnecting from voice normally...
+2025-06-03 18:54:31,661:INFO:logging in using static token
+2025-06-03 18:56:14,645:INFO:logging in using static token
+2025-06-03 18:57:57,668:INFO:logging in using static token
+2025-06-03 18:58:32,774:INFO:logging in using static token
+2025-06-03 18:59:33,801:INFO:logging in using static token
+2025-06-03 18:59:35,083:INFO:Shard ID None has connected to Gateway (Session ID: a930dc8faa3c8603c494cdc1ef479ef7).
+2025-06-03 18:59:37,271:INFO:Bot logged in as พี่มาแล้วน้อง#3371
+2025-06-03 18:59:37,675:INFO:Global commands synced.
+2025-06-03 18:59:38,007:ERROR:Ignoring exception in on_ready
+Traceback (most recent call last):
+  File "/usr/local/python/3.12.1/lib/python3.12/site-packages/discord/client.py", line 481, in _run_event
+    await coro(*args, **kwargs)
+  File "/workspaces/discord_poke/main.py", line 46, in on_ready
+    await tree.sync(guild=guild)
+  File "/usr/local/python/3.12.1/lib/python3.12/site-packages/discord/app_commands/tree.py", line 1131, in sync
+    data = await self._http.bulk_upsert_guild_commands(self.client.application_id, guild.id, payload=payload)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/python/3.12.1/lib/python3.12/site-packages/discord/http.py", line 756, in request
+    raise Forbidden(response, data)
+discord.errors.Forbidden: 403 Forbidden (error code: 50001): Missing Access
+2025-06-03 19:02:33,544:INFO:logging in using static token
+2025-06-03 19:02:35,248:INFO:Shard ID None has connected to Gateway (Session ID: 31256ee5289b16ee493eef9dd0d2acd0).
+2025-06-03 19:02:37,291:INFO:Bot logged in as พี่มาแล้วน้อง#3371
+2025-06-03 19:02:37,746:INFO:Global commands synced.
+2025-06-03 19:02:38,055:ERROR:Ignoring exception in on_ready
+Traceback (most recent call last):
+  File "/usr/local/python/3.12.1/lib/python3.12/site-packages/discord/client.py", line 481, in _run_event
+    await coro(*args, **kwargs)
+  File "/workspaces/discord_poke/main.py", line 46, in on_ready
+    await tree.sync(guild=guild)
+  File "/usr/local/python/3.12.1/lib/python3.12/site-packages/discord/app_commands/tree.py", line 1131, in sync
+    data = await self._http.bulk_upsert_guild_commands(self.client.application_id, guild.id, payload=payload)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/python/3.12.1/lib/python3.12/site-packages/discord/http.py", line 756, in request
+    raise Forbidden(response, data)
+discord.errors.Forbidden: 403 Forbidden (error code: 50001): Missing Access

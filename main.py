@@ -7,8 +7,10 @@ import os
 import yt_dlp
 import threading
 import logging
+from dotenv import load_dotenv
+load_dotenv()
 
-TOKEN = "your_bot_token"
+TOKEN = os.getenv("DISCORD_TOKEN")
 
 YOUR_GUILD_ID = 123456789012345678
 
