@@ -1,6 +1,7 @@
+/* General Body and Container Styles */
 body {
-    background-color: #121212;
-    color: #FFFFFF;
+    background-color: #0d0d0d; /* Darker background */
+    color: #e0e0e0; /* Lighter text for contrast */
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
     padding: 0;
@@ -8,239 +9,383 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+    overflow-x: hidden; /* Prevent horizontal scroll */
 }
 
 .container {
-    max-width: 800px;
-    width: 90%;
+    max-width: 900px; /* Slightly wider */
+    width: 95%;
     margin: 20px auto;
-    padding: 30px;
-    background-color: #1E1E1E;
-    border-radius: 15px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    padding: 40px;
+    background-color: #1a1a1a; /* Darker container */
+    border-radius: 20px; /* More rounded corners */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6); /* More prominent shadow */
     text-align: center;
 }
 
-h1 {
-    text-align: center;
-    margin-bottom: 30px;
+/* Header Styles */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 40px;
+}
+
+.header-icon {
+    width: 60px; /* Larger icon */
+    height: 60px;
+    vertical-align: middle;
+    margin-right: 15px;
+    filter: drop-shadow(0 0 5px rgba(29, 185, 84, 0.7)); /* Green glow */
+}
+
+.header h1 {
     color: #1DB954; /* Spotify Green */
-    font-size: 2.5em;
+    font-size: 3em; /* Larger title */
+    margin: 0;
+    letter-spacing: 1.5px;
 }
 
-h2 {
-    color: #FF9800; /* Orange for sections */
-    margin-top: 30px;
-    margin-bottom: 15px;
-    font-size: 1.8em;
+/* Section Styling */
+.section {
+    margin-bottom: 40px;
+    padding: 20px;
+    background-color: #222222; /* Slightly lighter background for sections */
+    border-radius: 15px;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3); /* Inner shadow */
+    border: 1px solid #333;
 }
 
-.info-box {
-    background-color: #282828;
-    border-left: 5px solid #1DB954; /* Spotify Green */
-    padding: 15px;
+.section-title {
+    color: #a0a0a0; /* Subtler title color */
+    font-size: 2em;
     margin-bottom: 25px;
-    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border-bottom: 2px solid #333;
+    padding-bottom: 15px;
+}
+
+.section-title i {
+    color: #1DB954; /* Spotify Green for icons */
+    font-size: 1.2em;
+}
+
+.section-subtitle {
+    color: #a0a0a0;
+    font-size: 1.6em;
+    margin-top: 30px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.section-subtitle i {
+    color: #1DB954;
+    font-size: 1.1em;
+}
+
+/* Info Box */
+.info-box {
+    background-color: #2b2b2b;
+    border-left: 5px solid #1DB954;
+    padding: 20px;
+    margin-bottom: 25px;
+    border-radius: 10px;
     text-align: left;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 .info-box p {
-    margin: 5px 0;
-    line-height: 1.5;
+    margin: 8px 0;
+    line-height: 1.6;
+    color: #cccccc;
 }
 
+.info-box strong {
+    color: #f0f0f0;
+}
+
+/* Status Messages */
 .status-message {
-    font-size: 1.1em;
+    font-size: 1.2em;
     font-weight: bold;
-    margin-bottom: 20px;
+    margin: 20px 0;
+    padding: 10px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+.status-message i {
+    font-size: 1.3em;
 }
 .status-message.success {
-    color: #4CAF50; /* Green */
+    background-color: #2a5a3a;
+    color: #a7f3d0;
 }
 .status-message.error {
-    color: #f44336; /* Red */
+    background-color: #6a2a2a;
+    color: #f87171;
+}
+.status-message.info {
+    background-color: #2a4a6a;
+    color: #a7d9f3;
 }
 
-
-.flash-messages {
+/* Flash Messages */
+.flash-messages ul {
     list-style: none;
     padding: 0;
     margin-bottom: 20px;
 }
 
-.flash-messages li {
-    padding: 10px 15px;
-    border-radius: 5px;
-    margin-bottom: 8px;
+.flash-messages .message-item {
+    padding: 15px 20px;
+    border-radius: 10px;
+    margin-bottom: 12px;
     text-align: center;
     font-weight: bold;
+    font-size: 1.1em;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
-.flash-messages li.success {
-    background-color: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
+.flash-messages .message-item.success {
+    background-color: #28a745; /* Darker green */
+    color: #ffffff;
 }
-.flash-messages li.error {
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
+.flash-messages .message-item.error {
+    background-color: #dc3545; /* Darker red */
+    color: #ffffff;
 }
-.flash-messages li.info {
-    background-color: #d1ecf1;
-    color: #0c5460;
-    border: 1px solid #bee5eb;
+.flash-messages .message-item.info {
+    background-color: #007bff; /* Darker blue */
+    color: #ffffff;
 }
 
-
-.button, button[type="submit"], .spotify-button, .discord-login-button, .discord-logout-button {
-    padding: 12px 25px;
+/* Buttons */
+.button, button[type="submit"], .action-button {
+    padding: 14px 28px;
     border: none;
     border-radius: 50px;
-    background-color: #FF9800; /* Original Orange */
+    background-color: #6a40a8; /* Purple-ish default button */
     color: #FFF;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
     text-decoration: none;
-    display: inline-flex; /* Use flex for icon alignment */
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    margin: 5px; /* Adjust margin for better spacing */
-    font-size: 1em;
+    margin: 8px;
+    font-size: 1.05em;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
-.button:hover, button[type="submit"]:hover, 
-.spotify-button:hover, .discord-login-button:hover, .discord-logout-button:hover {
-    background-color: #FFA726; /* Lighter orange on hover */
-    transform: translateY(-2px); /* Slight lift effect */
+.button:hover, button[type="submit"]:hover, .action-button:hover {
+    background-color: #8c5cdb; /* Lighter purple on hover */
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.button i, .action-button i {
+    margin-right: 8px;
+    font-size: 1.1em;
 }
 
 .spotify-button {
     background-color: #1DB954; /* Spotify Green */
-    font-size: 1.1em;
-    padding: 15px 30px;
+    font-size: 1.15em;
+    padding: 16px 32px;
 }
-
 .spotify-button:hover {
-    background-color: #1ED760; /* Lighter Spotify Green on hover */
+    background-color: #1ED760; /* Lighter Spotify Green */
 }
 
 .discord-login-button {
     background-color: #7289DA; /* Discord Blue */
-    font-size: 1.1em;
-    padding: 15px 30px;
+    font-size: 1.15em;
+    padding: 16px 32px;
 }
 .discord-login-button:hover {
-    background-color: #8C9EFF; /* Lighter Discord Blue */
+    background-color: #8C9EFF;
 }
 
 .discord-logout-button {
-    background-color: #dc3545; /* Red for logout */
+    background-color: #e62e2e; /* Brighter red for logout */
 }
 .discord-logout-button:hover {
-    background-color: #c82333;
+    background-color: #ff4d4d;
 }
 
-
-.controls {
+/* Control Grids */
+.controls-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 15px;
     justify-content: center;
-    margin-top: 20px;
-    margin-bottom: 20px;
+    margin-top: 25px;
 }
 
-.play-form {
-    display: flex;
-    flex-grow: 1; /* Allow form to take available space */
-    max-width: 100%; /* Ensure it doesn't overflow */
-    gap: 10px;
-    margin-bottom: 10px;
-    justify-content: center; /* Center items within the form */
-}
-
-.play-form input[type="text"] {
-    flex: 1; /* Allow input to grow */
-    padding: 12px;
-    border: none;
-    border-radius: 8px;
+/* Input Styles */
+input[type="text"], input[type="number"] {
+    padding: 14px;
+    border: 1px solid #444;
+    border-radius: 10px; /* More rounded inputs */
     background-color: #333;
     color: #FFF;
-    font-size: 1em;
-    min-width: 150px; /* Ensure input is not too small */
+    font-size: 1.0em;
+    outline: none;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+input[type="text"]:focus, input[type="number"]:focus {
+    border-color: #1DB954; /* Green focus border */
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2), 0 0 8px rgba(29, 185, 84, 0.5);
+}
+
+.play-form, .speak-form {
+    display: flex;
+    flex-grow: 1;
+    max-width: 100%;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+}
+
+.play-form input[type="text"], .speak-form input[type="text"] {
+    flex: 1;
+    min-width: 200px; /* Ensure input is not too small */
+}
+
+/* Volume Control Specifics */
+.volume-device-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+    align-items: center;
+    margin-top: 15px;
 }
 
 .volume-form {
     display: flex;
     gap: 10px;
     align-items: center;
-    justify-content: center;
 }
 
-.volume-form input[type="number"] {
-    width: 70px; /* Adjust width for volume input */
-    padding: 12px;
-    border: none;
-    border-radius: 8px;
-    background-color: #333;
-    color: #FFF;
-    font-size: 1em;
+.volume-input {
+    width: 80px; /* Fixed width for volume */
     text-align: center;
+    opacity: 0; /* Hidden by default */
+    transform: translateX(-10px); /* Slide in effect */
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none; /* Make it unclickable when hidden */
 }
 
-hr {
+.volume-input.active {
+    opacity: 1; /* Visible when active */
+    transform: translateX(0); /* Slide in */
+    pointer-events: auto; /* Clickable when active */
+}
+
+.send-volume-button {
+    background-color: #4CAF50; /* Green checkmark button */
+}
+.send-volume-button:hover {
+    background-color: #66BB6A;
+}
+
+/* Horizontal Rule (Divider) */
+.divider {
     border: none;
-    border-top: 1px solid #333;
-    margin: 40px 0;
+    border-top: 2px solid #333;
+    margin: 50px 0;
+    width: 80%;
+    margin-left: auto;
+    margin-right: auto;
 }
 
+/* Footer */
 .footer {
     margin-top: 50px;
-    text-align: center;
+    padding-top: 20px;
+    border-top: 1px solid #333;
     font-size: 0.9em;
-    color: #666;
+    color: #888;
 }
 
-/* Responsive adjustments */
+/* Responsive Adjustments */
 @media (max-width: 768px) {
     .container {
-        padding: 20px;
+        padding: 25px;
     }
-    h1 {
-        font-size: 2em;
+    .header h1 {
+        font-size: 2.2em;
     }
-    h2 {
-        font-size: 1.5em;
+    .header-icon {
+        width: 50px;
+        height: 50px;
     }
-    .button, button[type="submit"], .spotify-button, .discord-login-button, .discord-logout-button {
-        padding: 10px 20px;
-        font-size: 0.9em;
+    .section-title {
+        font-size: 1.6em;
+    }
+    .section-subtitle {
+        font-size: 1.4em;
+    }
+    .button, button[type="submit"], .action-button {
+        padding: 12px 20px;
+        font-size: 0.95em;
+        margin: 6px;
     }
     .spotify-button, .discord-login-button {
-        padding: 12px 25px;
-        font-size: 1em;
+        padding: 14px 28px;
+        font-size: 1.05em;
     }
-    .play-form, .volume-form {
+    .play-form, .speak-form, .volume-form, .controls-grid {
         flex-direction: column;
         align-items: stretch;
+        gap: 10px;
     }
-    .play-form input[type="text"], .volume-form input[type="number"] {
-        width: auto; /* Full width for input */
-        margin-bottom: 10px;
+    .play-form input[type="text"], .speak-form input[type="text"], .volume-form input[type="number"] {
+        width: 100%;
+        min-width: unset;
+        margin-bottom: 5px; /* Add margin to separate from button */
     }
-    .play-form button, .volume-form button {
-        width: 100%; /* Full width for button */
+    .play-form button, .speak-form button, .volume-form button, .volume-toggle-button, .send-volume-button {
+        width: 100%;
+    }
+    .volume-input {
+        width: 100%; /* Ensure full width on mobile */
     }
 }
 
 @media (max-width: 480px) {
-    .button, button[type="submit"], .spotify-button, .discord-login-button, .discord-logout-button {
-        padding: 8px 15px;
-        font-size: 0.8em;
+    .container {
+        padding: 15px;
     }
-    h1 {
+    .header h1 {
         font-size: 1.8em;
+    }
+    .header-icon {
+        width: 40px;
+        height: 40px;
+    }
+    .section-title {
+        font-size: 1.4em;
+    }
+    .section-subtitle {
+        font-size: 1.2em;
+    }
+    .button, button[type="submit"], .action-button {
+        padding: 10px 15px;
+        font-size: 0.85em;
+        margin: 4px;
     }
 }
