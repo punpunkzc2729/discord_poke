@@ -2,15 +2,96 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>Discord Spotify Bot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Bot Control</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1 { color: #5c6bc0; }
+        .section { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background-color: #e8eaf6; }
+        .status { font-weight: bold; }
+        .linked { color: green; }
+        .unlinked { color: red; }
+        .btn { display: inline-block; padding: 10px 15px; margin: 5px 0; border-radius: 5px; text-decoration: none; color: white; cursor: pointer; }
+        .btn-primary { background-color: #7986cb; }
+        .btn-danger { background-color: #ef5350; }
+        .btn-spotify { background-color: #1DB954; }
+        .btn:hover { opacity: 0.9; }
+        .message { padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+        .message.success { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
+        .message.error { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+        .message.info { background-color: #d1ecf1; color: #0c5460; border-color: #bee5eb; }
+        input[type="text"], input[type="number"] { padding: 8px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; width: calc(100% - 20px); }
+        .flex-group { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    </style>
 </head>
-<body style="background: #222; color: #fff; text-align: center; font-family: sans-serif;">
-    <h1>🎵 Discord Spotify Bot</h1>
+<body>
+    <div class="container">
+        <h1>Discord Bot Control Panel</h1>
 
-    {% if is_spotify_linked %}
-        <p>✅ Spotify เชื่อมต่อแล้ว</p>
-    {% else %}
-        <a href="/spotify_login" style="padding: 10px 20px; background: #1DB954; color: #fff; border-radius: 5px; text-decoration: none;">เชื่อมต่อ Spotify</a>
-    {% endif %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul class="flashes">
+                    {% for category, message in messages %}
+                        <li class="message {{ category }}">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+        <div class="section">
+            <h2>Discord Connection</h2>
+            <p>Status:
+                <span class="status {% if is_discord_linked %}linked{% else %}unlinked{% endif %}">
+                    {% if is_discord_linked %}
+                        เชื่อมต่อแล้ว (User ID: {{ discord_user_id }})
+                    {% else %}
+                        ยังไม่ได้เชื่อมต่อ
+                    {% endif %}
+                </span>
+            </p>
+            {% if not is_discord_linked %}
+                <a href="{{ url_for('login_discord') }}" class="btn btn-primary">เชื่อมต่อ Discord</a>
+            {% else %}
+                <a href="{{ url_for('logout_discord') }}" class="btn btn-danger">ออกจากระบบ Discord</a>
+            {% endif %}
+        </div>
+
+        {% if is_discord_linked %}
+        <div class="section">
+            <h2>Spotify Control (สำหรับ Discord User ID: {{ discord_user_id }})</h2>
+            <p>Status:
+                <span class="status {% if is_spotify_linked %}linked{% else %}unlinked{% endif %}">
+                    {% if is_spotify_linked %}
+                        เชื่อมต่อแล้ว
+                    {% else %}
+                        ยังไม่ได้เชื่อมต่อ
+                    {% endif %}
+                </span>
+            </p>
+            {% if not is_spotify_linked %}
+                <a href="{{ url_for('login_spotify_web', discord_user_id_param=discord_user_id) }}" class="btn btn-spotify">เชื่อมต่อ Spotify</a>
+            {% else %}
+                <form action="{{ url_for('control_spotify', action='play_query') }}" method="get" class="flex-group">
+                    <input type="text" name="query" placeholder="ชื่อเพลง, ศิลปิน, หรือลิงก์ Spotify" style="flex-grow: 1;">
+                    <button type="submit" class="btn btn-spotify">เล่น</button>
+                </form>
+                <div style="display: flex; gap: 10px;">
+                    <a href="{{ url_for('control_spotify', action='pause') }}" class="btn btn-primary">หยุดชั่วคราว</a>
+                    <a href="{{ url_for('control_spotify', action='resume') }}" class="btn btn-primary">เล่นต่อ</a>
+                    <a href="{{ url_for('control_spotify', action='skip') }}" class="btn btn-primary">ข้าม</a>
+                    <a href="{{ url_for('control_spotify', action='previous') }}" class="btn btn-primary">เพลงก่อนหน้า</a>
+                </div>
+                <div class="flex-group">
+                    <input type="number" name="level" form="volumeForm" min="0" max="100" placeholder="ระดับเสียง (0-100)" style="flex-grow: 1;">
+                    <form id="volumeForm" action="{{ url_for('control_spotify', action='set_volume') }}" method="get" style="display: inline;">
+                        <button type="submit" class="btn btn-primary">ปรับเสียง</button>
+                    </form>
+                </div>
+                <a href="{{ url_for('control_spotify', action='devices') }}" class="btn btn-info">ดูอุปกรณ์</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
 </body>
 </html>
