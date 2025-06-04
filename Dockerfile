@@ -24,4 +24,4 @@ COPY . .
 EXPOSE 5000
 
 # Command to run (this will be overridden by Procfile)
-CMD ["python", "main.py"]
+CMD ["python", "bot.py"]
