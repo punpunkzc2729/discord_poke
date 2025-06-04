@@ -1,0 +1,2 @@
+# Procfile.bot
+bot: python discord_bot/bot.py
