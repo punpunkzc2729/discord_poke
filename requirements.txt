@@ -3,5 +3,6 @@ Flask
 python-dotenv
 spotipy
 gTTS
+PyNaCl
 httpx
 Werkzeug==2.3.8
