@@ -21,10 +21,6 @@ h1 {
     color: #FF9800;
 }
 
-h2 {
-    color: #FF9800;
-}
-
 .queue {
     margin: 20px 0;
     padding: 15px;
@@ -42,7 +38,7 @@ form {
     display: flex;
     gap: 10px;
     margin-top: 20px;
-    margin-bottom: 30px;
+    flex-wrap: wrap;
 }
 
 input[type="text"], input[type="file"] {
@@ -64,7 +60,6 @@ button, .button {
     cursor: pointer;
     transition: all 0.3s ease;
     text-decoration: none;
-    display: inline-block;
     text-align: center;
 }
 
@@ -78,12 +73,7 @@ button:hover, .button:hover {
     flex-wrap: wrap;
     gap: 10px;
     justify-content: center;
-    margin-top: 30px;
-}
-
-a.button {
-    text-align: center;
-    min-width: 100px;
+    margin-top: 20px;
 }
 
 .footer {
@@ -102,13 +92,9 @@ a.button {
     input[type="text"], input[type="file"] {
         font-size: 16px;
     }
-    
-    .button, button {
-        width: 80%;
-        margin-bottom: 10px;
-    }
 
-    .controls .button:last-child {
-        margin-bottom: 0;
+    .button, button {
+        width: 100%;
+        margin-bottom: 10px;
     }
 }

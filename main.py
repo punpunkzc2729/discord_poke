@@ -9,6 +9,7 @@ import threading
 import logging
 from dotenv import load_dotenv
 load_dotenv()
+import discord.opus
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 
@@ -214,22 +215,16 @@ def volume_down():
     logging.info(f"Volume down: {volume}")
     return redirect("/")
 
-@app.route("/upload_cookies", methods=["GET", "POST"])
+@app.route("/upload_cookies", methods=["POST"])
 def upload_cookies():
-    if request.method == "POST":
-        if 'file' not in request.files:
-            return '❌ ไม่พบไฟล์ที่อัปโหลด'
-        file = request.files['file']
-        if file.filename == '':
-            return '❌ ยังไม่ได้เลือกไฟล์'
-        if file and file.filename == 'cookies.txt':
-            file.save(os.path.join(app.root_path, 'cookies.txt'))
-            logging.info("✅ อัปโหลด cookies.txt ใหม่เรียบร้อยแล้ว")
-            return redirect(url_for("index"))
-        else:
-            return '❌ อัปโหลดได้เฉพาะ cookies.txt เท่านั้น'
+    if 'cookies_file' not in request.files:
+        return "No file uploaded", 400
+    file = request.files['cookies_file']
+    if file.filename == '':
+        return "No selected file", 400
+    file.save("cookies.txt")
+    return redirect("/")
 
-    return render_template("upload_cookies.html")
 
 
 
@@ -242,5 +237,8 @@ if __name__ == "__main__":
 
 if not discord.opus.is_loaded():
     discord.opus.load_opus('libopus.so')    
+
+if not discord.opus.is_loaded():
+    discord.opus.load_opus('libopus.so')
 
 bot.run(TOKEN)

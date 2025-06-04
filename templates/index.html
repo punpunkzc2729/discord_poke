@@ -8,49 +8,47 @@
     <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/1500/1500300.png" type="image/png">
 </head>
 <body>
-    <div class="container">
-        <h1>
-            <img src="https://cdn-icons-png.flaticon.com/512/2907/2907150.png" alt="Bot Icon" style="width: 40px; vertical-align: middle; margin-right: 10px;">
-            Discord Music Bot Control
-        </h1>
+<div class="container">
+    <h1><img src="https://cdn-icons-png.flaticon.com/512/2907/2907150.png" style="width:40px; vertical-align:middle; margin-right:10px;">Discord Music Bot Control</h1>
 
-        <h2>Current Queue</h2>
-        <div class="queue" id="queueDisplay">
-            {% if queue %}
-                {% for item in queue %}
-                    <p>{{ loop.index }}. {{ item }}</p>
-                {% endfor %}
-            {% else %}
-                <p>คิวกำลังว่าง...</p>
-            {% endif %}
-        </div>
-
-        <form action="{{ url_for('add') }}" method="POST">
-            <input type="text" name="url" placeholder="ใส่ URL เพลง (เช่น YouTube)" required aria-label="Music URL">
-            <button type="submit">เพิ่มเข้าคิว <span role="img" aria-label="plus">➕</span></button>
-        </form>
-
-        <h2>Controls</h2>
-        <div class="controls">
-            <a href="{{ url_for('play_web') }}" class="button">เล่นเพลง ▶️</a>
-            <a href="{{ url_for('pause_web') }}" class="button">หยุดชั่วคราว ⏸️</a>
-            <a href="{{ url_for('resume_web') }}" class="button">เล่นต่อ ⏯️</a>
-            <a href="{{ url_for('skip_web') }}" class="button">ข้ามเพลง ⏭️</a>
-            <a href="{{ url_for('stop_web') }}" class="button">หยุดและล้างคิว ⏹️</a>
-        </div>
-
-        <div class="controls" style="margin-top: 15px;">
-            <a href="{{ url_for('volume_up') }}" class="button">เพิ่มเสียง 🔊</a>
-            <a href="{{ url_for('volume_down') }}" class="button">ลดเสียง 🔉</a>
-        </div>
-
-        <div class="controls" style="margin-top: 20px;">
-            <a href="{{ url_for('upload_cookies') }}" class="button">อัปโหลด cookies.txt 🍪</a>
-        </div>
-
-        <div class="footer">
-            <p>&copy; {{ 2025 }} Music Bot Interface</p>
-        </div>
+    <h2>Current Queue</h2>
+    <div class="queue">
+        {% if queue %}
+            {% for item in queue %}
+                <p>{{ loop.index }}. {{ item }}</p>
+            {% endfor %}
+        {% else %}
+            <p>คิวกำลังว่าง...</p>
+        {% endif %}
     </div>
+
+    <form action="{{ url_for('add') }}" method="POST">
+        <input type="text" name="url" placeholder="ใส่ URL เพลง (เช่น YouTube)" required>
+        <button type="submit">➕ เพิ่มเข้าคิว</button>
+    </form>
+
+    <h2>Controls</h2>
+    <div class="controls">
+        <a href="{{ url_for('play_web') }}" class="button">▶️ เล่นเพลง</a>
+        <a href="{{ url_for('pause_web') }}" class="button">⏸️ หยุด</a>
+        <a href="{{ url_for('resume_web') }}" class="button">⏯️ ต่อ</a>
+        <a href="{{ url_for('skip_web') }}" class="button">⏭️ ข้าม</a>
+        <a href="{{ url_for('stop_web') }}" class="button">⏹️ หยุด/ล้างคิว</a>
+    </div>
+    <div class="controls" style="margin-top:15px;">
+        <a href="{{ url_for('volume_up') }}" class="button">🔊 เพิ่มเสียง</a>
+        <a href="{{ url_for('volume_down') }}" class="button">🔉 ลดเสียง</a>
+    </div>
+
+    <h2>Upload Cookies</h2>
+    <form action="{{ url_for('upload_cookies') }}" method="POST" enctype="multipart/form-data">
+        <input type="file" name="cookies_file" accept=".txt" required>
+        <button type="submit">📤 อัปโหลด cookies.txt</button>
+    </form>
+
+    <div class="footer">
+        <p>&copy; 2025 Music Bot Interface</p>
+    </div>
+</div>
 </body>
 </html>
