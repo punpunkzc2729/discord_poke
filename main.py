@@ -98,12 +98,12 @@ async def play_next(channel):
         await channel.send("🎵 Queue ว่างแล้ว")
         logging.info("Queue is empty.")
         return
-
     url = queue.pop(0)
     ydl_opts = {
         'format': 'bestaudio/best',
-        'noplaylist': True
-        }
+        'noplaylist': True,
+        'cookiefile': 'cookies.txt'
+    }
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -113,12 +113,6 @@ async def play_next(channel):
         await channel.send(f"❌ ไม่สามารถเล่นเพลงได้: {e}")
         logging.error(f"Failed to extract audio: {e}")
         return
-
-    source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(audio_url, executable="ffmpeg"), volume=volume)
-    voice_client.play(source, after=lambda e: bot.loop.create_task(play_next(channel)))
-    await channel.send(f"🎶 Now Playing: {title}")
-    logging.info(f"Now playing: {title}")
-
 
     source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(audio_url, executable="ffmpeg"), volume=volume)
     voice_client.play(source, after=lambda e: bot.loop.create_task(play_next(channel)))
