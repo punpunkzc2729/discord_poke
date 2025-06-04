@@ -4,68 +4,108 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
     padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
 }
 
 .container {
     max-width: 800px;
-    margin: 50px auto;
-    padding: 20px;
+    width: 90%;
+    margin: 20px auto;
+    padding: 30px;
     background-color: #1E1E1E;
     border-radius: 15px;
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    text-align: center;
 }
 
 h1 {
     text-align: center;
     margin-bottom: 30px;
-    color: #FF9800;
+    color: #1DB954; /* Spotify Green */
+    font-size: 2.5em;
 }
 
-.queue {
-    margin: 20px 0;
+h2 {
+    color: #FF9800; /* Orange for sections */
+    margin-top: 30px;
+    margin-bottom: 15px;
+    font-size: 1.8em;
+}
+
+.info-box {
+    background-color: #282828;
+    border-left: 5px solid #1DB954; /* Spotify Green */
     padding: 15px;
-    background-color: #2C2C2C;
-    border-radius: 10px;
-    min-height: 50px;
-}
-
-.queue p {
-    margin: 5px 0;
-    word-break: break-word;
-}
-
-form {
-    display: flex;
-    gap: 10px;
-    margin-top: 20px;
-    flex-wrap: wrap;
-}
-
-input[type="text"], input[type="file"] {
-    flex: 1;
-    padding: 12px;
-    border: none;
+    margin-bottom: 25px;
     border-radius: 8px;
-    background-color: #333;
-    color: #FFF;
+    text-align: left;
 }
 
-button, .button {
-    padding: 12px 20px;
+.info-box p {
+    margin: 5px 0;
+    line-height: 1.5;
+}
+
+.status-message {
+    font-size: 1.1em;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.flash-messages {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 20px;
+}
+
+.flash-messages li {
+    background-color: #4CAF50; /* Green for success */
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+/* Error messages */
+.flash-messages li.error {
+    background-color: #f44336; /* Red for errors */
+}
+
+
+.button, button[type="submit"], .spotify-button {
+    padding: 12px 25px;
     border: none;
     border-radius: 50px;
-    background-color: #FF9800;
+    background-color: #FF9800; /* Original Orange */
     color: #FFF;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
     text-decoration: none;
-    text-align: center;
+    display: inline-flex; /* Use flex for icon alignment */
+    align-items: center;
+    justify-content: center;
+    margin: 5px; /* Adjust margin for better spacing */
+    font-size: 1em;
 }
 
-button:hover, .button:hover {
-    background-color: #FFA726;
-    transform: scale(1.05);
+.button:hover, button[type="submit"]:hover, .spotify-button:hover {
+    background-color: #FFA726; /* Lighter orange on hover */
+    transform: translateY(-2px); /* Slight lift effect */
+}
+
+.spotify-button {
+    background-color: #1DB954; /* Spotify Green */
+    font-size: 1.1em;
+    padding: 15px 30px;
+}
+
+.spotify-button:hover {
+    background-color: #1ED760; /* Lighter Spotify Green on hover */
 }
 
 .controls {
@@ -74,6 +114,51 @@ button:hover, .button:hover {
     gap: 10px;
     justify-content: center;
     margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.play-form {
+    display: flex;
+    flex-grow: 1; /* Allow form to take available space */
+    max-width: 100%; /* Ensure it doesn't overflow */
+    gap: 10px;
+    margin-bottom: 10px;
+    justify-content: center; /* Center items within the form */
+}
+
+.play-form input[type="text"] {
+    flex: 1; /* Allow input to grow */
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background-color: #333;
+    color: #FFF;
+    font-size: 1em;
+    min-width: 150px; /* Ensure input is not too small */
+}
+
+.volume-form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+}
+
+.volume-form input[type="number"] {
+    width: 70px; /* Adjust width for volume input */
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background-color: #333;
+    color: #FFF;
+    font-size: 1em;
+    text-align: center;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #333;
+    margin: 40px 0;
 }
 
 .footer {
@@ -83,18 +168,60 @@ button:hover, .button:hover {
     color: #666;
 }
 
-@media (max-width: 600px) {
-    .controls {
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container {
+        padding: 20px;
+    }
+    h1 {
+        font-size: 2em;
+    }
+    h2 {
+        font-size: 1.5em;
+    }
+    .button, button[type="submit"], .spotify-button {
+        padding: 10px 20px;
+        font-size: 0.9em;
+    }
+    .spotify-button {
+        padding: 12px 25px;
+        font-size: 1em;
+    }
+    .play-form, .volume-form {
         flex-direction: column;
-        align-items: center;
+        align-items: stretch;
     }
-
-    input[type="text"], input[type="file"] {
-        font-size: 16px;
-    }
-
-    .button, button {
-        width: 100%;
+    .play-form input[type="text"], .volume-form input[type="number"] {
+        width: auto; /* Full width for input */
         margin-bottom: 10px;
     }
+    .play-form button, .volume-form button {
+        width: 100%; /* Full width for button */
+    }
+}
+
+@media (max-width: 480px) {
+    .button, button[type="submit"], .spotify-button {
+        padding: 8px 15px;
+        font-size: 0.8em;
+    }
+    h1 {
+        font-size: 1.8em;
+    }
+}
+
+/* Queue display - simple styling */
+.queue {
+    margin: 20px 0;
+    padding: 15px;
+    background-color: #2C2C2C;
+    border-radius: 10px;
+    min-height: 50px; 
+    text-align: left;
+}
+
+.queue p {
+    margin: 5px 0;
+    word-break: break-all;
+    font-size: 0.95em;
 }

@@ -3,52 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Discord Music Bot Control</title>
+    <title>Discord Spotify Bot Control</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/1500/1500300.png" type="image/png">
+    <script>
+        // JavaScript สำหรับการดึง Discord User ID
+        // ในสถานการณ์จริง ควรใช้ Discord OAuth เพื่อรับ User ID อย่างปลอดภัย
+        // แต่นี่คือตัวอย่างง่ายๆ เพื่อสาธิตการทำงาน
+        function getDiscordUserId() {
+            let userId = localStorage.getItem('discordUserId');
+            if (!userId) {
+                // Prompt user for ID if not found (ไม่ปลอดภัยใน Production)
+                userId = prompt("กรุณาใส่ Discord User ID ของคุณ (เพื่อเชื่อมต่อ Spotify ส่วนตัว):");
+                if (userId) {
+                    localStorage.setItem('discordUserId', userId);
+                } else {
+                    alert("จำเป็นต้องมี Discord User ID เพื่อเชื่อมต่อ Spotify.");
+                    return null;
+                }
+            }
+            return userId;
+        }
+
+        // ฟังก์ชันสำหรับ redirect ไปยัง Spotify Login พร้อม Discord User ID
+        function redirectToSpotifyLogin() {
+            const userId = getDiscordUserId();
+            if (userId) {
+                window.location.href = `/login/spotify/${userId}`;
+            }
+        }
+
+        // ฟังก์ชันสำหรับส่งคำสั่งควบคุม Spotify ผ่านเว็บ
+        function sendSpotifyControl(action, query = null, level = null) {
+            const userId = getDiscordUserId();
+            if (!userId) return; // หากไม่มี user ID ก็ทำอะไรไม่ได้
+
+            let url = `/control_spotify/${action}?discord_user_id=${userId}`;
+            if (query) {
+                url += `&query=${encodeURIComponent(query)}`;
+            }
+            if (level !== null) {
+                url += `&level=${level}`;
+            }
+            window.location.href = url;
+        }
+    </script>
 </head>
 <body>
-<div class="container">
-    <h1><img src="https://cdn-icons-png.flaticon.com/512/2907/2907150.png" style="width:40px; vertical-align:middle; margin-right:10px;">Discord Music Bot Control</h1>
+    <div class="container">
+        <h1><img src="https://cdn-icons-png.flaticon.com/512/2907/2907150.png" alt="Bot Icon" style="width: 40px; vertical-align: middle; margin-right: 10px;">Discord Spotify Bot Control</h1>
 
-    <h2>Current Queue</h2>
-    <div class="queue">
-        {% if queue %}
-            {% for item in queue %}
-                <p>{{ loop.index }}. {{ item }}</p>
-            {% endfor %}
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <ul>
+                        {% for message in messages %}
+                            <li>{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <h2>การเชื่อมต่อ Spotify ส่วนตัว</h2>
+        <div class="info-box">
+            <p><strong>สำคัญ:</strong> บอทนี้จะควบคุม **Spotify App ของคุณ** โดยตรง ไม่ใช่เล่นเพลงใน Discord Voice Channel</p>
+            <p>คุณต้องมีบัญชี Spotify Premium และเปิด Spotify App ไว้บนอุปกรณ์ใดอุปกรณ์หนึ่งเพื่อฟังเพลง</p>
+            <p>หากคุณยังไม่ได้เชื่อมต่อ Spotify หรือต้องการเชื่อมต่อใหม่:</p>
+            <button onclick="redirectToSpotifyLogin()" class="button spotify-button">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/1200px-Spotify_logo_without_text.svg.png" alt="Spotify Logo" style="width: 20px; vertical-align: middle; margin-right: 5px;">
+                เชื่อมต่อ Spotify
+            </button>
+            <p style="margin-top: 10px;">
+                <strong>วิธีใช้:</strong>
+                <br>1. คลิกปุ่ม "เชื่อมต่อ Spotify" ด้านบน
+                <br>2. เข้าสู่ระบบ Spotify และอนุญาตการเข้าถึง
+                <br>3. กลับมาที่หน้านี้เพื่อควบคุมเพลง
+            </p>
+        </div>
+
+        {% if is_spotify_linked %}
+            <p class="status-message">✅ คุณเชื่อมต่อ Spotify แล้ว (สำหรับ Discord User ID: {{ discord_user_id }})</p>
+            <h3>ควบคุม Spotify</h3>
+            <div class="controls">
+                <form onsubmit="event.preventDefault(); sendSpotifyControl('play_query', document.getElementById('spotifyQuery').value);" class="play-form">
+                    <input type="text" id="spotifyQuery" name="query" placeholder="ชื่อเพลง, ศิลปิน, หรือลิงก์ Spotify" required aria-label="Spotify Music Query">
+                    <button type="submit" class="button">เล่น <span role="img" aria-label="play">▶️</span></button>
+                </form>
+                <button onclick="sendSpotifyControl('pause')" class="button">หยุดชั่วคราว <span role="img" aria-label="pause">⏸️</span></button>
+                <button onclick="sendSpotifyControl('resume')" class="button">เล่นต่อ <span role="img" aria-label="resume">⏯️</span></button>
+                <button onclick="sendSpotifyControl('skip')" class="button">ข้ามเพลง <span role="img" aria-label="skip">⏭️</span></button>
+                <button onclick="sendSpotifyControl('previous')" class="button">เพลงก่อนหน้า <span role="img" aria-label="previous">⏮️</span></button>
+            </div>
+            <div class="controls" style="margin-top: 15px;">
+                <form onsubmit="event.preventDefault(); sendSpotifyControl('set_volume', null, document.getElementById('volumeLevel').value);" class="volume-form">
+                    <input type="number" id="volumeLevel" name="level" min="0" max="100" value="50" aria-label="Volume Level">
+                    <button type="submit" class="button">ปรับเสียง <span role="img" aria-label="volume">🔊</span></button>
+                </form>
+                <button onclick="sendSpotifyControl('devices')" class="button">ดูอุปกรณ์ <span role="img" aria-label="devices">📱</span></button>
+            </div>
         {% else %}
-            <p>คิวกำลังว่าง...</p>
+            <p class="status-message">❌ กรุณาเชื่อมต่อบัญชี Spotify ของคุณ</p>
         {% endif %}
-    </div>
 
-    <form action="{{ url_for('add') }}" method="POST">
-        <input type="text" name="url" placeholder="ใส่ URL เพลง (เช่น YouTube)" required>
-        <button type="submit">➕ เพิ่มเข้าคิว</button>
-    </form>
+        ---
 
-    <h2>Controls</h2>
-    <div class="controls">
-        <a href="{{ url_for('play_web') }}" class="button">▶️ เล่นเพลง</a>
-        <a href="{{ url_for('pause_web') }}" class="button">⏸️ หยุด</a>
-        <a href="{{ url_for('resume_web') }}" class="button">⏯️ ต่อ</a>
-        <a href="{{ url_for('skip_web') }}" class="button">⏭️ ข้าม</a>
-        <a href="{{ url_for('stop_web') }}" class="button">⏹️ หยุด/ล้างคิว</a>
-    </div>
-    <div class="controls" style="margin-top:15px;">
-        <a href="{{ url_for('volume_up') }}" class="button">🔊 เพิ่มเสียง</a>
-        <a href="{{ url_for('volume_down') }}" class="button">🔉 ลดเสียง</a>
-    </div>
+        <h2>Discord Voice Bot (Text-to-Speech)</h2>
+        <div class="info-box">
+            <p>ฟังก์ชัน Text-to-Speech (TTS) จะยังทำงานใน Discord Voice Channel หากบอทอยู่ในห้อง</p>
+        </div>
+        <div class="controls">
+            <a href="{{ url_for('join_web') }}" class="button">เข้าห้องเสียง <span role="img" aria-label="join voice">🎧</span></a>
+            <a href="{{ url_for('leave_web') }}" class="button">ออกจากห้องเสียง <span role="img" aria-label="leave voice">👋</span></a>
+            <form action="{{ url_for('speak_web') }}" method="post" class="play-form">
+                <input type="text" name="message" placeholder="ข้อความที่จะให้บอทพูด" required aria-label="TTS Message">
+                <button type="submit" class="button">พูด <span role="img" aria-label="speak">🗣️</span></button>
+            </form>
+        </div>
 
-    <h2>Upload Cookies</h2>
-    <form action="{{ url_for('upload_cookies') }}" method="POST" enctype="multipart/form-data">
-        <input type="file" name="cookies_file" accept=".txt" required>
-        <button type="submit">📤 อัปโหลด cookies.txt</button>
-    </form>
-
-    <div class="footer">
-        <p>&copy; 2025 Music Bot Interface</p>
+        <div class="footer">
+            <p>&copy; {{ 2025 }} Spotify & TTS Discord Bot Interface</p>
+        </div>
     </div>
-</div>
 </body>
 </html>
