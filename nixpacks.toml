@@ -2,5 +2,6 @@
 nixPkgs = [
   "python312",
   "python312Packages.pynacl",
-  "ffmpeg"
+  "ffmpeg",
+  "libopus",
 ]
