@@ -34,6 +34,8 @@ logging.basicConfig(filename='bot.log', level=logging.INFO, format='%(asctime)s:
 
 @bot.event
 async def on_ready():
+    if not discord.opus.is_loaded():
+        discord.opus.load_opus('libopus.so')
     print(f"✅ Bot logged in as {bot.user}")
     logging.info(f"Bot logged in as {bot.user}")
 
@@ -45,6 +47,7 @@ async def on_ready():
     guild = discord.Object(id=YOUR_GUILD_ID)
     await tree.sync(guild=guild)
     logging.info(f"Commands synced to guild: {YOUR_GUILD_ID}")
+    
 
 @tree.command(name="join", description="เข้าห้อง Voice")
 async def join(interaction: discord.Interaction):
@@ -210,6 +213,25 @@ def volume_down():
     volume = max(volume - 0.1, 0.1)
     logging.info(f"Volume down: {volume}")
     return redirect("/")
+
+@app.route("/upload_cookies", methods=["GET", "POST"])
+def upload_cookies():
+    if request.method == "POST":
+        if 'file' not in request.files:
+            return '❌ ไม่พบไฟล์ที่อัปโหลด'
+        file = request.files['file']
+        if file.filename == '':
+            return '❌ ยังไม่ได้เลือกไฟล์'
+        if file and file.filename == 'cookies.txt':
+            file.save(os.path.join(app.root_path, 'cookies.txt'))
+            logging.info("✅ อัปโหลด cookies.txt ใหม่เรียบร้อยแล้ว")
+            return redirect(url_for("index"))
+        else:
+            return '❌ อัปโหลดได้เฉพาะ cookies.txt เท่านั้น'
+
+    return render_template("upload_cookies.html")
+
+
 
 def run_web():
     app.run(host="0.0.0.0", port=5000)

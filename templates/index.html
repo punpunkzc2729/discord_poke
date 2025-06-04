@@ -6,9 +6,13 @@
     <title>Discord Music Bot Control</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/1500/1500300.png" type="image/png">
-</head><body>
+</head>
+<body>
     <div class="container">
-        <h1><img src="https://cdn-icons-png.flaticon.com/512/2907/2907150.png" alt="Bot Icon" style="width: 40px; vertical-align: middle; margin-right: 10px;">Discord Music Bot Control</h1>
+        <h1>
+            <img src="https://cdn-icons-png.flaticon.com/512/2907/2907150.png" alt="Bot Icon" style="width: 40px; vertical-align: middle; margin-right: 10px;">
+            Discord Music Bot Control
+        </h1>
 
         <h2>Current Queue</h2>
         <div class="queue" id="queueDisplay">
@@ -28,20 +32,25 @@
 
         <h2>Controls</h2>
         <div class="controls">
-            <a href="{{ url_for('play_web') }}" class="button">เล่นเพลง <span role="img" aria-label="play">▶️</span></a>
-            <a href="{{ url_for('pause_web') }}" class="button">หยุดชั่วคราว <span role="img" aria-label="pause">⏸️</span></a>
-            <a href="{{ url_for('resume_web') }}" class="button">เล่นต่อ <span role="img" aria-label="resume">⏯️</span></a>
-            <a href="{{ url_for('skip_web') }}" class="button">ข้ามเพลง <span role="img" aria-label="skip">⏭️</span></a>
-            <a href="{{ url_for('stop_web') }}" class="button">หยุดและล้างคิว <span role="img" aria-label="stop">⏹️</span></a>
+            <a href="{{ url_for('play_web') }}" class="button">เล่นเพลง ▶️</a>
+            <a href="{{ url_for('pause_web') }}" class="button">หยุดชั่วคราว ⏸️</a>
+            <a href="{{ url_for('resume_web') }}" class="button">เล่นต่อ ⏯️</a>
+            <a href="{{ url_for('skip_web') }}" class="button">ข้ามเพลง ⏭️</a>
+            <a href="{{ url_for('stop_web') }}" class="button">หยุดและล้างคิว ⏹️</a>
         </div>
+
         <div class="controls" style="margin-top: 15px;">
-             <a href="{{ url_for('volume_up') }}" class="button">เพิ่มเสียง <span role="img" aria-label="volume up">🔊</span></a>
-             <a href="{{ url_for('volume_down') }}" class="button">ลดเสียง <span role="img" aria-label="volume down">🔉</span></a>
+            <a href="{{ url_for('volume_up') }}" class="button">เพิ่มเสียง 🔊</a>
+            <a href="{{ url_for('volume_down') }}" class="button">ลดเสียง 🔉</a>
+        </div>
+
+        <div class="controls" style="margin-top: 20px;">
+            <a href="{{ url_for('upload_cookies') }}" class="button">อัปโหลด cookies.txt 🍪</a>
         </div>
 
         <div class="footer">
             <p>&copy; {{ 2025 }} Music Bot Interface</p>
         </div>
     </div>
-    </body>
+</body>
 </html>
