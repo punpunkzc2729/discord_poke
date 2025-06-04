@@ -9,10 +9,8 @@ import logging
 from dotenv import load_dotenv
 load_dotenv()
 import discord.opus
-
-# --- เพิ่มส่วนสำหรับ Spotify User Authentication ---
 import spotipy
-from spotipy.oauth2 import SpotifyOAuth # สำหรับ User Authentication
+from spotipy.oauth2 import SpotifyOAuth 
 
 # ตั้งค่า Spotify API Credentials
 SPOTIPY_CLIENT_ID = os.getenv("SPOTIPY_CLIENT_ID")

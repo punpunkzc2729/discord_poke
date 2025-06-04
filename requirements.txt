@@ -4,3 +4,4 @@ gtts
 yt-dlp
 python-dotenv
 PyNaCl
+spotipy
