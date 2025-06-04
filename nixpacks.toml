@@ -1,7 +1,8 @@
 [phases.setup]
-nixPkgs = [
-  "python312",
-  "python312Packages.pynacl",
-  "ffmpeg",
-  "libopus",
-]
+nixPkgs = ["ffmpeg", "libopus"]
+
+[phases.build]
+cmds = ["pip install -r requirements.txt"]
+
+[phases.start]
+cmd = "python main.py"

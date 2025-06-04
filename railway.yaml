@@ -1,0 +1,3 @@
+deploy:
+  dockerfilePath: ./Dockerfile
+  startCommand: python main.py
