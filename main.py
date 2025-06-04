@@ -218,4 +218,7 @@ if __name__ == "__main__":
     threading.Thread(target=lambda: bot.run(TOKEN)).start()
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
 
+if not discord.opus.is_loaded():
+    discord.opus.load_opus('libopus.so')    
+
 bot.run(TOKEN)
