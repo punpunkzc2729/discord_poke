@@ -1,2 +1,6 @@
 [phases.setup]
-nixPkgs = ["python312", "python312Packages.pynacl", "ffmpeg", "discord.py", "flask", "gtts", "yt-dlp", "logging","python-dotenv", "PyNaCl"]
+nixPkgs = [
+  "python312",
+  "python312Packages.pynacl",
+  "ffmpeg"
+]
