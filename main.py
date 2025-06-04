@@ -14,6 +14,12 @@ from spotipy.oauth2 import SpotifyOAuth
 # --- โหลดตัวแปรสภาพแวดล้อมจากไฟล์ .env ---
 load_dotenv()
 
+if os.getenv('RUN_GUNICORN_WEB', 'false').lower() == 'true':
+    # ถ้าตัวแปรสภาพแวดล้อมนี้ถูกตั้งค่าเป็น 'true' แสดงว่าเรากำลังรัน gunicorn
+    # เพื่อป้องกัน bot.run ถูกเรียกซ้ำโดย gunicorn worker
+    os.environ['FLASK_RUNNING_VIA_GUNICORN'] = 'true'
+
+
 # --- ตั้งค่า Spotify API Credentials ---
 SPOTIPY_CLIENT_ID = os.getenv("SPOTIPY_CLIENT_ID")
 SPOTIPY_CLIENT_SECRET = os.getenv("SPOTIPY_CLIENT_SECRET")
@@ -865,6 +871,20 @@ if __name__ == "__main__":
     web_thread = threading.Thread(target=run_web, daemon=True)
     web_thread.start()
     
-    # รันบอทใน main thread (หรือ thread แยกต่างหาก หาก Flask เป็น main)
-    # ในกรณีนี้ Flask เป็น main, ดังนั้น bot ต้องรันใน thread แยก
-    bot.run(DISCORD_TOKEN)
+    if os.getenv('FLASK_RUNNING_VIA_GUNICORN') == 'true':
+        # ถ้าเป็น Gunicorn, Flask app จะถูกรันโดย Gunicorn โดยตรง
+        # เราแค่ต้องรันบอท Discord ในอีก thread
+        logging.info("Running Discord bot in a separate thread for Gunicorn web server.")
+        bot_thread = threading.Thread(target=bot.run, args=(DISCORD_TOKEN,), daemon=True)
+        bot_thread.start()
+        # Gunicorn จะรับผิดชอบการรัน app = Flask(__name__, ...)
+    else:
+        # ถ้าไม่ได้รันผ่าน Gunicorn (เช่น รัน `python main.py` โดยตรง)
+        # เราจะรัน Flask ใน thread และ Discord Bot ใน main thread
+        logging.info("Running Flask web server in a separate thread for local development/bot process.")
+        web_thread = threading.Thread(target=lambda: app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)), debug=True, use_reloader=False), daemon=True)
+        web_thread.start()
+        # ตั้งค่า use_reloader=False เพื่อป้องกันการรันซ้ำเมื่อ Flask ถูก reload
+        
+        # กำหนดให้ bot.run ทำงานใน main thread
+        bot.run(DISCORD_TOKEN)

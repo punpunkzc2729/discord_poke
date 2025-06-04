@@ -1,7 +1,7 @@
 discord.py
-flask
-gtts
-yt-dlp
+Flask
 python-dotenv
-PyNaCl
 spotipy
+gTTS
+httpx
+Werkzeug==2.3.8
