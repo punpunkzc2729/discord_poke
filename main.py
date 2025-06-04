@@ -10,10 +10,8 @@ import json
 from dotenv import load_dotenv
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
-import httpx # เพิ่ม httpx
-
-# เพิ่ม import asyncio เพื่อใช้ asyncio.run_coroutine_threadsafe
-import asyncio 
+import httpx
+import asyncio
 
 # --- โหลดตัวแปรสภาพแวดล้อมจากไฟล์ .env ---
 load_dotenv()
@@ -220,12 +218,13 @@ async def play(interaction: discord.Interaction, query: str):
         track_uris = []
         response_msg = "🎶"
 
-        if "spotify.com/track/" in query:
+        # แก้ไข URL Spotify ให้ถูกต้อง
+        if "https://open.spotify.com/track/" in query:
             track = sp_user.track(query)
             track_uris.append(track['uri'])
             response_msg += f" กำลังเล่นเพลง: **{track['name']}** โดย **{track['artists'][0]['name']}**"
             logging.info(f"Playing Spotify track URI: {track['uri']}")
-        elif "spotify.com/playlist/" in query:
+        elif "https://open.spotify.com/playlist/" in query:
             playlist_id = query.split('/')[-1].split('?')[0]
             results = sp_user.playlist_items(playlist_id)
             for item in results['items']:
@@ -233,7 +232,7 @@ async def play(interaction: discord.Interaction, query: str):
                     track_uris.append(item['track']['uri'])
             response_msg += f" กำลังเล่นเพลงจาก Spotify Playlist (พบ {len(track_uris)} เพลง)"
             logging.info(f"Playing Spotify playlist with {len(track_uris)} tracks.")
-        elif "spotify.com/album/" in query:
+        elif "https://open.spotify.com/album/" in query:
             album_id = query.split('/')[-1].split('?')[0]
             results = sp_user.album_tracks(album_id)
             for item in results['items']:
@@ -266,11 +265,13 @@ async def play(interaction: discord.Interaction, query: str):
             return
 
         if "playlist" in query or "album" in query:
+            # ใช้ context_uri สำหรับ Playlist/Album
             if "playlist" in query:
                 sp_user.start_playback(device_id=active_device_id, context_uri=f"spotify:playlist:{playlist_id}")
             elif "album" in query:
                 sp_user.start_playback(device_id=active_device_id, context_uri=f"spotify:album:{album_id}")
         else:
+            # ใช้ uris สำหรับ Single Track
             sp_user.start_playback(device_id=active_device_id, uris=track_uris)
         
         await interaction.followup.send(response_msg)
@@ -439,6 +440,12 @@ async def wake(interaction: discord.Interaction, user: discord.User):
 @app.route("/")
 def index():
     current_session_id = session.get('session_id')
+    # If there's no session_id, create one for new users
+    if not current_session_id:
+        current_session_id = os.urandom(16).hex()
+        session['session_id'] = current_session_id
+        logging.info(f"New Flask session created: {current_session_id}")
+
     discord_user_id = web_logged_in_users.get(current_session_id)
     
     is_discord_linked = False
@@ -447,10 +454,13 @@ def index():
 
     is_spotify_linked = False
     if discord_user_id:
-        # ใช้ bot.loop.run_until_complete() เพื่อเรียก async function ใน Flask sync context
-        is_spotify_linked = bot.loop.run_until_complete(
-            _check_spotify_link_status(discord_user_id)
-        )
+        # ใช้ asyncio.run_coroutine_threadsafe เพื่อรัน async function ใน bot's loop
+        # ต้องรอให้บอทพร้อมก่อน
+        bot.loop.run_until_complete(bot_ready.wait())
+        is_spotify_linked = asyncio.run_coroutine_threadsafe(
+            _check_spotify_link_status(discord_user_id),
+            bot.loop
+        ).result() # ใช้ .result() เพื่อรอผลลัพธ์ใน synchronous context
 
     return render_template(
         "index.html", 
@@ -473,8 +483,8 @@ def login_discord():
         f"&response_type=code"
         f"&scope={'+'.join(DISCORD_OAUTH_SCOPES.split(' '))}"
     )
-    session['auth_session_id'] = os.urandom(16).hex()
-    logging.info(f"Redirecting to Discord for OAuth. Auth session ID: {session['auth_session_id']}")
+    # session['auth_session_id'] = os.urandom(16).hex() # ไม่จำเป็นต้องใช้ auth_session_id แยก
+    logging.info(f"Redirecting to Discord for OAuth.")
     return redirect(discord_auth_url)
 
 @app.route("/callback/discord")
@@ -492,34 +502,37 @@ def discord_callback():
         logging.error("Discord OAuth: No code received.")
         return redirect(url_for("index"))
 
-    # ต้องรันส่วนนี้ใน bot.loop เพราะ httpx เป็น async
     try:
         # รอให้บอทพร้อมก่อน (ถ้ายังไม่พร้อม)
         bot.loop.run_until_complete(bot_ready.wait())
 
-        token_info, user_data = bot.loop.run_until_complete(
-            _fetch_discord_token_and_user(code)
-        )
+        # ใช้ asyncio.run_coroutine_threadsafe เพื่อรัน coroutine ใน bot.loop
+        token_info, user_data = asyncio.run_coroutine_threadsafe(
+            _fetch_discord_token_and_user(code),
+            bot.loop
+        ).result() # ใช้ .result() เพื่อรอผลลัพธ์ใน synchronous context
         
         discord_user_id = int(user_data["id"])
         discord_username = user_data["username"]
 
-        current_session_id = session.get('auth_session_id')
-        if current_session_id:
-            web_logged_in_users[current_session_id] = discord_user_id
-            session['discord_user_id_for_web'] = discord_user_id
-            flash(f"✅ เข้าสู่ระบบ Discord สำเร็จ: {discord_username} ({discord_user_id})", "success")
-            logging.info(f"Discord User {discord_username} ({discord_user_id}) logged in via web.")
-        else:
-            flash("❌ เกิดข้อผิดพลาด: ไม่พบเซสชัน ID สำหรับการล็อกอิน", "error")
-            logging.error("Discord OAuth: auth_session_id not found in session.")
+        current_session_id = session.get('session_id') # ใช้ session_id เดียวกัน
+        if not current_session_id: # หากไม่มี session_id ใน callback (ไม่น่าเกิดขึ้นถ้า index ทำงาน)
+            current_session_id = os.urandom(16).hex()
+            session['session_id'] = current_session_id
+            logging.info(f"New Flask session created during Discord callback: {current_session_id}")
+
+        web_logged_in_users[current_session_id] = discord_user_id
+        session['discord_user_id_for_web'] = discord_user_id # เก็บไว้ใน session เพื่อความสะดวก
+        
+        flash(f"✅ เข้าสู่ระบบ Discord สำเร็จ: {discord_username} ({discord_user_id})", "success")
+        logging.info(f"Discord User {discord_username} ({discord_user_id}) logged in via web.")
 
     except httpx.HTTPStatusError as e:
         flash(f"❌ ข้อผิดพลาด HTTP จาก Discord API: {e.response.text}", "error")
-        logging.error(f"Discord OAuth HTTP error: {e.response.text}")
+        logging.error(f"Discord OAuth HTTP error: {e.response.text}", exc_info=True)
     except Exception as e:
         flash(f"❌ เกิดข้อผิดพลาดในการเชื่อมต่อ Discord: {e}", "error")
-        logging.error(f"Unexpected error during Discord OAuth: {e}")
+        logging.error(f"Unexpected error during Discord OAuth: {e}", exc_info=True) # เพิ่ม exc_info=True เพื่อดู stack trace
     
     return redirect(url_for("index"))
 
@@ -556,6 +569,7 @@ async def _fetch_discord_token_and_user(code):
 def logout_discord():
     current_session_id = session.get('session_id')
     if current_session_id in web_logged_in_users:
+        logging.info(f"Logging out Discord user linked to session {current_session_id}")
         del web_logged_in_users[current_session_id]
     if 'discord_user_id_for_web' in session:
         session.pop('discord_user_id_for_web', None)
@@ -618,7 +632,10 @@ def spotify_callback():
     )
 
     try:
-        token_info = auth_manager.get_access_token(code)
+        # ใช้ asyncio.to_thread เพื่อเรียก get_access_token ที่เป็น sync function
+        # จากภายใน async context (bot.loop)
+        token_info = bot.loop.run_until_complete(asyncio.to_thread(auth_manager.get_access_token, code))
+        
         auth_manager_with_token = SpotifyOAuth(
             client_id=SPOTIPY_CLIENT_ID,
             client_secret=SPOTIPY_CLIENT_SECRET,
@@ -635,13 +652,13 @@ def spotify_callback():
         logging.info(f"User {discord_user_id} successfully linked Spotify.")
     except Exception as e:
         flash(f"❌ เกิดข้อผิดพลาดในการเชื่อมต่อ Spotify: {e}", "error")
-        logging.error(f"Error during Spotify callback for user {discord_user_id}: {e}")
+        logging.error(f"Error during Spotify callback for user {discord_user_id}: {e}", exc_info=True)
     
     return redirect(url_for("index"))
 
 # --- Flask Routes สำหรับควบคุม Spotify ---
 @app.route("/control_spotify/<action>")
-def control_spotify(action: str): # เปลี่ยนเป็น def ปกติ
+def control_spotify(action: str):
     current_session_id = session.get('session_id')
     discord_user_id = web_logged_in_users.get(current_session_id)
     
@@ -663,7 +680,13 @@ def control_spotify(action: str): # เปลี่ยนเป็น def ปก
                 flash("❌ โปรดใส่ข้อความค้นหาหรือลิงก์ Spotify", "error")
                 return redirect(url_for("index"))
             
-            response_message = bot.loop.run_until_complete(_play_spotify_from_web(sp_user, query))
+            # รัน _play_spotify_from_web ใน bot.loop และรอผลลัพธ์
+            response_message = bot.loop.run_until_complete(
+                asyncio.run_coroutine_threadsafe(
+                    _play_spotify_from_web(sp_user, query),
+                    bot.loop
+                ).result()
+            )
             flash(response_message, "success")
 
         elif action == "pause":
@@ -723,10 +746,10 @@ def control_spotify(action: str): # เปลี่ยนเป็น def ปก
              flash("❌ ไม่พบ Spotify Client ที่กำลังทำงานอยู่ โปรดเปิด Spotify App ของคุณ", "error")
         else:
             flash(f"❌ เกิดข้อผิดพลาด Spotify: {e}", "error")
-        logging.error(f"Spotify web control error for user {discord_user_id} ({action}): {e}")
+        logging.error(f"Spotify web control error for user {discord_user_id} ({action}): {e}", exc_info=True)
     except Exception as e:
         flash(f"❌ เกิดข้อผิดพลาดที่ไม่คาดคิด: {e}", "error")
-        logging.error(f"Web control error for user {discord_user_id} ({action}): {e}")
+        logging.error(f"Web control error for user {discord_user_id} ({action}): {e}", exc_info=True)
     
     return redirect(url_for("index"))
 
@@ -735,18 +758,19 @@ async def _play_spotify_from_web(sp_user, query):
     track_uris = []
     response_msg = ""
     
-    if "spotify.com/track/" in query:
+    # แก้ไข URL Spotify ให้ถูกต้อง
+    if "https://open.spotify.com/track/" in query:
         track = await asyncio.to_thread(sp_user.track, query)
         track_uris.append(track['uri'])
         response_msg = f"🎶 กำลังเล่นเพลง: **{track['name']}** โดย **{track['artists'][0]['name']}**"
-    elif "spotify.com/playlist/" in query:
+    elif "https://open.spotify.com/playlist/" in query:
         playlist_id = query.split('/')[-1].split('?')[0]
         results = await asyncio.to_thread(sp_user.playlist_items, playlist_id)
         for item in results['items']:
             if item['track'] and item['track']['type'] == 'track':
                 track_uris.append(item['track']['uri'])
         response_msg = f"🎶 กำลังเล่นเพลงจาก Spotify Playlist (พบ {len(track_uris)} เพลง)"
-    elif "spotify.com/album/" in query:
+    elif "https://open.spotify.com/album/" in query:
         album_id = query.split('/')[-1].split('?')[0]
         results = await asyncio.to_thread(sp_user.album_tracks, album_id)
         for item in results['items']:
@@ -762,7 +786,7 @@ async def _play_spotify_from_web(sp_user, query):
 
     if not track_uris:
         return "❌ ไม่พบเพลงที่ต้องการเล่น หรือลิงก์ไม่ถูกต้อง"
-    
+
     devices = await asyncio.to_thread(sp_user.devices)
     active_device_id = None
     for device in devices['devices']:
@@ -781,83 +805,15 @@ async def _play_spotify_from_web(sp_user, query):
     else:
         await asyncio.to_thread(sp_user.start_playback, device_id=active_device_id, uris=track_uris)
     
-    return response_message
-
-
-# --- Flask Routes สำหรับควบคุม Discord Voice (TTS) ---
-@app.route("/control_discord/join")
-def join_web(): # เปลี่ยนเป็น def ปกติ
-    flash("💡 โปรดใช้คำสั่ง `/join` ใน Discord โดยตรง เพื่อให้บอทเข้าห้องเสียงที่คุณอยู่", "info")
-    return redirect(url_for("index"))
-
-@app.route("/control_discord/leave")
-def leave_web(): # เปลี่ยนเป็น def ปกติ
-    global voice_client, queue
-    if voice_client and voice_client.is_connected():
-        # ต้องรัน disconnect ใน bot.loop
-        bot.loop.run_until_complete(voice_client.disconnect())
-        voice_client = None
-        queue.clear()
-        flash("✅ ออกจากห้อง Voice แล้ว", "success")
-        logging.info("Left voice channel via web and cleared queue.")
-    else:
-        flash("❌ บอทยังไม่ได้ join ห้อง Voice", "error")
-    return redirect(url_for("index"))
-
-@app.route("/control_discord/speak", methods=["POST"])
-def speak_web(): # เปลี่ยนเป็น def ปกติ
-    message = request.form.get("message")
-    if not message:
-        flash("❌ โปรดใส่ข้อความที่ต้องการให้บอทพูด", "error")
-        return redirect(url_for("index"))
-    
-    if not voice_client or not voice_client.is_connected():
-        flash("❌ บอทยังไม่เข้าห้อง Voice โปรดใช้ `/join` ใน Discord ก่อน", "error")
-        return redirect(url_for("index"))
-    
-    try:
-        tts = gTTS(message, lang='th')
-        tts_filename = f"tts_web_{os.urandom(8).hex()}.mp3"
-        tts.save(tts_filename)
-        
-        source = discord.FFmpegPCMAudio(tts_filename, executable="ffmpeg")
-        
-        # รันการเล่นเสียงใน Discord loop
-        if voice_client.is_playing():
-            # ใช้ run_coroutine_threadsafe เพื่อรัน coroutine จากอีก thread หนึ่ง
-            asyncio.run_coroutine_threadsafe(
-                voice_client.play(source, after=lambda e: bot.loop.create_task(resume_audio(e, voice_client, tts_filename))),
-                bot.loop
-            )
-            # ต้อง pause ก่อนแล้วค่อย play
-            asyncio.run_coroutine_threadsafe(voice_client.pause(), bot.loop)
-        else:
-            asyncio.run_coroutine_threadsafe(
-                voice_client.play(source, after=lambda e: bot.loop.create_task(cleanup_audio(e, tts_filename))),
-                bot.loop
-            )
-            
-        flash(f"🗣️ บอทกำลังพูด: {message}", "success")
-        logging.info(f"TTS message from web: {message}")
-    except Exception as e:
-        flash(f"❌ เกิดข้อผิดพลาดในการพูด: {e}", "error")
-        logging.error(f"Failed to speak via web: {e}")
-    return redirect(url_for("index"))
-
+    return response_msg
 
 # --- Running Bot and Flask ---
-# เพิ่ม flag เพื่อตรวจสอบว่า Flask app กำลังถูกรันผ่าน Gunicorn หรือไม่
-IS_RUNNING_VIA_GUNICORN = os.getenv('FLASK_APP') is not None
+def run_flask():
+    # Gunicorn จะเป็นตัวจัดการรัน Flask app บน Railway
+    # ไม่ต้องเรียก app.run() ตรงๆ ในโค้ดนี้เมื่อใช้ Gunicorn
+    pass 
 
 if __name__ == "__main__":
-    if IS_RUNNING_VIA_GUNICORN:
-        logging.info("Running Discord bot in a separate thread for Gunicorn web server.")
-        bot_thread = threading.Thread(target=bot.run, args=(DISCORD_TOKEN,), daemon=True)
-        bot_thread.start()
-        # Gunicorn จะจัดการ Flask app ที่ main:app ใน Procfile
-    else:
-        logging.info("Running Flask web server in a separate thread for local development/bot process.")
-        web_thread = threading.Thread(target=lambda: app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)), debug=False, use_reloader=False), daemon=True)
-        web_thread.start()
-        
-        bot.run(DISCORD_TOKEN)
+    flask_thread = threading.Thread(target=run_flask)
+    flask_thread.start()
+    bot.run(DISCORD_TOKEN)

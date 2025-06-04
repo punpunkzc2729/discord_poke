@@ -1,8 +1,9 @@
 discord.py
 Flask
+gTTS
 python-dotenv
 spotipy
-gTTS
-PyNaCl
 httpx
+PyNaCl
+gunicorn
 Werkzeug==2.3.8
