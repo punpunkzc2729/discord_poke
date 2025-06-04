@@ -7,38 +7,14 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/1500/1500300.png" type="image/png">
     <script>
-        // JavaScript สำหรับการดึง Discord User ID
-        // ในสถานการณ์จริง ควรใช้ Discord OAuth เพื่อรับ User ID อย่างปลอดภัย
-        // แต่นี่คือตัวอย่างง่ายๆ เพื่อสาธิตการทำงาน
-        function getDiscordUserId() {
-            let userId = localStorage.getItem('discordUserId');
-            if (!userId) {
-                // Prompt user for ID if not found (ไม่ปลอดภัยใน Production)
-                userId = prompt("กรุณาใส่ Discord User ID ของคุณ (เพื่อเชื่อมต่อ Spotify ส่วนตัว):");
-                if (userId) {
-                    localStorage.setItem('discordUserId', userId);
-                } else {
-                    alert("จำเป็นต้องมี Discord User ID เพื่อเชื่อมต่อ Spotify.");
-                    return null;
-                }
-            }
-            return userId;
-        }
-
-        // ฟังก์ชันสำหรับ redirect ไปยัง Spotify Login พร้อม Discord User ID
-        function redirectToSpotifyLogin() {
-            const userId = getDiscordUserId();
-            if (userId) {
-                window.location.href = `/login/spotify/${userId}`;
-            }
-        }
-
-        // ฟังก์ชันสำหรับส่งคำสั่งควบคุม Spotify ผ่านเว็บ
         function sendSpotifyControl(action, query = null, level = null) {
-            const userId = getDiscordUserId();
-            if (!userId) return; // หากไม่มี user ID ก็ทำอะไรไม่ได้
+            const discordUserId = document.getElementById('discordUserId').value;
+            if (!discordUserId) {
+                alert("กรุณาเข้าสู่ระบบ Discord ก่อน!");
+                return;
+            }
 
-            let url = `/control_spotify/${action}?discord_user_id=${userId}`;
+            let url = `/control_spotify/${action}?discord_user_id=${discordUserId}`;
             if (query) {
                 url += `&query=${encodeURIComponent(query)}`;
             }
@@ -47,6 +23,16 @@
             }
             window.location.href = url;
         }
+
+        // สำหรับ Spotify login
+        function redirectToSpotifyLogin() {
+            const discordUserId = document.getElementById('discordUserId').value;
+            if (!discordUserId) {
+                alert("กรุณาเข้าสู่ระบบ Discord ก่อน!");
+                return;
+            }
+            window.location.href = `/login/spotify/${discordUserId}`;
+        }
     </script>
 </head>
 <body>
@@ -54,36 +40,55 @@
         <h1><img src="https://cdn-icons-png.flaticon.com/512/2907/2907150.png" alt="Bot Icon" style="width: 40px; vertical-align: middle; margin-right: 10px;">Discord Spotify Bot Control</h1>
 
         <div class="flash-messages">
-            {% with messages = get_flashed_messages() %}
+            {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     <ul>
-                        {% for message in messages %}
-                            <li>{{ message }}</li>
+                        {% for category, message in messages %}
+                            <li class="{{ category }}">{{ message }}</li>
                         {% endfor %}
                     </ul>
                 {% endif %}
             {% endwith %}
         </div>
 
+        <h2>การยืนยันตัวตน Discord</h2>
+        <div class="info-box">
+            <p>เพื่อใช้ฟังก์ชัน Spotify ส่วนตัว คุณต้องยืนยันตัวตน Discord บนหน้าเว็บนี้</p>
+            {% if is_discord_linked %}
+                <p class="status-message success">✅ เข้าสู่ระบบ Discord แล้ว: {{ discord_user_id }}</p>
+                <input type="hidden" id="discordUserId" value="{{ discord_user_id }}">
+                <a href="{{ url_for('logout_discord') }}" class="button discord-logout-button">ออกจากระบบ Discord</a>
+            {% else %}
+                <p class="status-message error">❌ คุณยังไม่ได้เข้าสู่ระบบ Discord</p>
+                <a href="{{ url_for('login_discord') }}" class="button discord-login-button">
+                    <img src="https://assets-global.website-files.com/6257adef93867e50d84d30e2/6257d23d7ab051f20251789c_58482ececef1014c0b5e4942.png" alt="Discord Logo" style="width: 20px; vertical-align: middle; margin-right: 5px;">
+                    เข้าสู่ระบบด้วย Discord
+                </a>
+                <input type="hidden" id="discordUserId" value="">
+            {% endif %}
+        </div>
+
         <h2>การเชื่อมต่อ Spotify ส่วนตัว</h2>
         <div class="info-box">
             <p><strong>สำคัญ:</strong> บอทนี้จะควบคุม **Spotify App ของคุณ** โดยตรง ไม่ใช่เล่นเพลงใน Discord Voice Channel</p>
             <p>คุณต้องมีบัญชี Spotify Premium และเปิด Spotify App ไว้บนอุปกรณ์ใดอุปกรณ์หนึ่งเพื่อฟังเพลง</p>
-            <p>หากคุณยังไม่ได้เชื่อมต่อ Spotify หรือต้องการเชื่อมต่อใหม่:</p>
-            <button onclick="redirectToSpotifyLogin()" class="button spotify-button">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/1200px-Spotify_logo_without_text.svg.png" alt="Spotify Logo" style="width: 20px; vertical-align: middle; margin-right: 5px;">
-                เชื่อมต่อ Spotify
-            </button>
-            <p style="margin-top: 10px;">
-                <strong>วิธีใช้:</strong>
-                <br>1. คลิกปุ่ม "เชื่อมต่อ Spotify" ด้านบน
-                <br>2. เข้าสู่ระบบ Spotify และอนุญาตการเข้าถึง
-                <br>3. กลับมาที่หน้านี้เพื่อควบคุมเพลง
-            </p>
+            
+            {% if is_discord_linked %}
+                {% if is_spotify_linked %}
+                    <p class="status-message success">✅ คุณเชื่อมต่อ Spotify แล้ว</p>
+                {% else %}
+                    <p class="status-message error">❌ คุณยังไม่ได้เชื่อมต่อ Spotify</p>
+                    <button onclick="redirectToSpotifyLogin()" class="button spotify-button">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/1200px-Spotify_logo_without_text.svg.png" alt="Spotify Logo" style="width: 20px; vertical-align: middle; margin-right: 5px;">
+                        เชื่อมต่อ Spotify
+                    </button>
+                {% endif %}
+            {% else %}
+                <p class="status-message">โปรดเข้าสู่ระบบ Discord ก่อน เพื่อเชื่อมต่อ Spotify</p>
+            {% endif %}
         </div>
 
-        {% if is_spotify_linked %}
-            <p class="status-message">✅ คุณเชื่อมต่อ Spotify แล้ว (สำหรับ Discord User ID: {{ discord_user_id }})</p>
+        {% if is_discord_linked and is_spotify_linked %}
             <h3>ควบคุม Spotify</h3>
             <div class="controls">
                 <form onsubmit="event.preventDefault(); sendSpotifyControl('play_query', document.getElementById('spotifyQuery').value);" class="play-form">
@@ -102,15 +107,18 @@
                 </form>
                 <button onclick="sendSpotifyControl('devices')" class="button">ดูอุปกรณ์ <span role="img" aria-label="devices">📱</span></button>
             </div>
+        {% elif is_discord_linked %}
+            <p>โปรดเชื่อมต่อ Spotify ของคุณ เพื่อควบคุมเพลง</p>
         {% else %}
-            <p class="status-message">❌ กรุณาเชื่อมต่อบัญชี Spotify ของคุณ</p>
+            <p>โปรดเข้าสู่ระบบ Discord ก่อน เพื่อควบคุม Spotify</p>
         {% endif %}
 
-        ---
+        <hr>
 
         <h2>Discord Voice Bot (Text-to-Speech)</h2>
         <div class="info-box">
             <p>ฟังก์ชัน Text-to-Speech (TTS) จะยังทำงานใน Discord Voice Channel หากบอทอยู่ในห้อง</p>
+            <p>คุณสามารถสั่งให้บอทเข้า/ออกจากห้องเสียงได้จากที่นี่</p>
         </div>
         <div class="controls">
             <a href="{{ url_for('join_web') }}" class="button">เข้าห้องเสียง <span role="img" aria-label="join voice">🎧</span></a>

@@ -54,6 +54,13 @@ h2 {
     font-weight: bold;
     margin-bottom: 20px;
 }
+.status-message.success {
+    color: #4CAF50; /* Green */
+}
+.status-message.error {
+    color: #f44336; /* Red */
+}
+
 
 .flash-messages {
     list-style: none;
@@ -62,21 +69,31 @@ h2 {
 }
 
 .flash-messages li {
-    background-color: #4CAF50; /* Green for success */
-    color: white;
     padding: 10px 15px;
     border-radius: 5px;
     margin-bottom: 8px;
     text-align: center;
+    font-weight: bold;
 }
 
-/* Error messages */
+.flash-messages li.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
 .flash-messages li.error {
-    background-color: #f44336; /* Red for errors */
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+.flash-messages li.info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
 }
 
 
-.button, button[type="submit"], .spotify-button {
+.button, button[type="submit"], .spotify-button, .discord-login-button, .discord-logout-button {
     padding: 12px 25px;
     border: none;
     border-radius: 50px;
@@ -93,7 +110,8 @@ h2 {
     font-size: 1em;
 }
 
-.button:hover, button[type="submit"]:hover, .spotify-button:hover {
+.button:hover, button[type="submit"]:hover, 
+.spotify-button:hover, .discord-login-button:hover, .discord-logout-button:hover {
     background-color: #FFA726; /* Lighter orange on hover */
     transform: translateY(-2px); /* Slight lift effect */
 }
@@ -107,6 +125,23 @@ h2 {
 .spotify-button:hover {
     background-color: #1ED760; /* Lighter Spotify Green on hover */
 }
+
+.discord-login-button {
+    background-color: #7289DA; /* Discord Blue */
+    font-size: 1.1em;
+    padding: 15px 30px;
+}
+.discord-login-button:hover {
+    background-color: #8C9EFF; /* Lighter Discord Blue */
+}
+
+.discord-logout-button {
+    background-color: #dc3545; /* Red for logout */
+}
+.discord-logout-button:hover {
+    background-color: #c82333;
+}
+
 
 .controls {
     display: flex;
@@ -179,11 +214,11 @@ hr {
     h2 {
         font-size: 1.5em;
     }
-    .button, button[type="submit"], .spotify-button {
+    .button, button[type="submit"], .spotify-button, .discord-login-button, .discord-logout-button {
         padding: 10px 20px;
         font-size: 0.9em;
     }
-    .spotify-button {
+    .spotify-button, .discord-login-button {
         padding: 12px 25px;
         font-size: 1em;
     }
@@ -201,27 +236,11 @@ hr {
 }
 
 @media (max-width: 480px) {
-    .button, button[type="submit"], .spotify-button {
+    .button, button[type="submit"], .spotify-button, .discord-login-button, .discord-logout-button {
         padding: 8px 15px;
         font-size: 0.8em;
     }
     h1 {
         font-size: 1.8em;
     }
-}
-
-/* Queue display - simple styling */
-.queue {
-    margin: 20px 0;
-    padding: 15px;
-    background-color: #2C2C2C;
-    border-radius: 10px;
-    min-height: 50px; 
-    text-align: left;
-}
-
-.queue p {
-    margin: 5px 0;
-    word-break: break-all;
-    font-size: 0.95em;
 }
