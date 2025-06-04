@@ -440,7 +440,6 @@ async def wake(interaction: discord.Interaction, user: discord.User):
 @app.route("/")
 def index():
     current_session_id = session.get('session_id')
-    # If there's no session_id, create one for new users
     if not current_session_id:
         current_session_id = os.urandom(16).hex()
         session['session_id'] = current_session_id
@@ -449,25 +448,24 @@ def index():
     discord_user_id = web_logged_in_users.get(current_session_id)
     
     is_discord_linked = False
+    is_spotify_linked = False
+
     if discord_user_id:
         is_discord_linked = True
 
-    is_spotify_linked = False
-    if discord_user_id:
-        # ใช้ asyncio.run_coroutine_threadsafe เพื่อรัน async function ใน bot's loop
-        # ต้องรอให้บอทพร้อมก่อน
-        bot.loop.run_until_complete(bot_ready.wait())
-        is_spotify_linked = asyncio.run_coroutine_threadsafe(
+        future = asyncio.run_coroutine_threadsafe(
             _check_spotify_link_status(discord_user_id),
             bot.loop
-        ).result() # ใช้ .result() เพื่อรอผลลัพธ์ใน synchronous context
+        )
+        is_spotify_linked = future.result()
 
     return render_template(
-        "index.html", 
+        "index.html",
         is_discord_linked=is_discord_linked,
         discord_user_id=discord_user_id,
         is_spotify_linked=is_spotify_linked
     )
+
 
 # Helper function เพื่อตรวจสอบสถานะ Spotify link แบบ Async
 async def _check_spotify_link_status(discord_user_id):
