@@ -1,3 +1,0 @@
-deploy:
-  dockerfilePath: ./Dockerfile
-  startCommand: python bot.py

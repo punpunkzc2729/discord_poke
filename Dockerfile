@@ -1,3 +1,4 @@
+# Dockerfile
 FROM python:3.12-slim
 
 # Install system dependencies for FFmpeg and Opus
@@ -23,5 +24,7 @@ COPY . .
 # Expose the port (only for the web service)
 EXPOSE 5000
 
-# Command to run (this will be overridden by Procfile)
-CMD ["python", "bot.py"]
+# Command to run (this will be overridden by Procfile on Railway)
+# CMD ["python", "flask_app/app.py"] # หรือ CMD ["true"] ก็ได้ ถ้ามั่นใจว่า Procfile จะทำงานเสมอ
+# คุณสามารถลบ CMD ออกได้ ถ้ามั่นใจว่า Railway จะใช้ Procfile เสมอ
+CMD ["true"] # เป็นคำสั่งที่ไม่ทำอะไรเลย แค่ให้ Dockerfile มี CMD
