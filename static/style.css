@@ -1,391 +1,200 @@
-/* General Body and Container Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 body {
-    background-color: #0d0d0d; /* Darker background */
-    color: #e0e0e0; /* Lighter text for contrast */
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
-    overflow-x: hidden; /* Prevent horizontal scroll */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
 }
 
-.container {
-    max-width: 900px; /* Slightly wider */
-    width: 95%;
-    margin: 20px auto;
+.player-container {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
     padding: 40px;
-    background-color: #1a1a1a; /* Darker container */
-    border-radius: 20px; /* More rounded corners */
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6); /* More prominent shadow */
+    box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    max-width: 400px;
+    width: 100%;
     text-align: center;
+    transition: transform 0.3s ease;
 }
 
-/* Header Styles */
-.header {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 40px;
+.player-container:hover {
+    transform: translateY(-5px);
 }
 
-.header-icon {
-    width: 60px; /* Larger icon */
-    height: 60px;
-    vertical-align: middle;
-    margin-right: 15px;
-    filter: drop-shadow(0 0 5px rgba(29, 185, 84, 0.7)); /* Green glow */
+.album-art {
+    width: 250px;
+    height: 250px;
+    border-radius: 20px;
+    margin: 0 auto 30px;
+    overflow: hidden;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+    position: relative;
+    transition: transform 0.3s ease;
 }
 
-.header h1 {
-    color: #1DB954; /* Spotify Green */
-    font-size: 3em; /* Larger title */
-    margin: 0;
-    letter-spacing: 1.5px;
+.album-art:hover {
+    transform: scale(1.05);
 }
 
-/* Section Styling */
-.section {
-    margin-bottom: 40px;
-    padding: 20px;
-    background-color: #222222; /* Slightly lighter background for sections */
-    border-radius: 15px;
-    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3); /* Inner shadow */
-    border: 1px solid #333;
+.album-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
 }
 
-.section-title {
-    color: #a0a0a0; /* Subtler title color */
-    font-size: 2em;
-    margin-bottom: 25px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    border-bottom: 2px solid #333;
-    padding-bottom: 15px;
+.album-art.playing img {
+    animation: rotate 20s linear infinite;
 }
 
-.section-title i {
-    color: #1DB954; /* Spotify Green for icons */
-    font-size: 1.2em;
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
-.section-subtitle {
-    color: #a0a0a0;
-    font-size: 1.6em;
-    margin-top: 30px;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
+.song-info {
+    margin-bottom: 30px;
+    color: white;
 }
 
-.section-subtitle i {
-    color: #1DB954;
-    font-size: 1.1em;
-}
-
-/* Info Box */
-.info-box {
-    background-color: #2b2b2b;
-    border-left: 5px solid #1DB954;
-    padding: 20px;
-    margin-bottom: 25px;
-    border-radius: 10px;
-    text-align: left;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-}
-
-.info-box p {
-    margin: 8px 0;
-    line-height: 1.6;
-    color: #cccccc;
-}
-
-.info-box strong {
-    color: #f0f0f0;
-}
-
-/* Status Messages */
-.status-message {
-    font-size: 1.2em;
+.song-title {
+    font-size: 24px;
     font-weight: bold;
+    margin-bottom: 8px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.artist-name {
+    font-size: 16px;
+    opacity: 0.8;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.progress-container {
     margin: 20px 0;
-    padding: 10px;
-    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #ff6b6b, #feca57);
+    border-radius: 3px;
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.controls {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-}
-.status-message i {
-    font-size: 1.3em;
-}
-.status-message.success {
-    background-color: #2a5a3a;
-    color: #a7f3d0;
-}
-.status-message.error {
-    background-color: #6a2a2a;
-    color: #f87171;
-}
-.status-message.info {
-    background-color: #2a4a6a;
-    color: #a7d9f3;
+    gap: 20px;
+    margin-top: 30px;
 }
 
-/* Flash Messages */
-.flash-messages ul {
-    list-style: none;
-    padding: 0;
-    margin-bottom: 20px;
-}
-
-.flash-messages .message-item {
-    padding: 15px 20px;
-    border-radius: 10px;
-    margin-bottom: 12px;
-    text-align: center;
-    font-weight: bold;
-    font-size: 1.1em;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-}
-
-.flash-messages .message-item.success {
-    background-color: #28a745; /* Darker green */
-    color: #ffffff;
-}
-.flash-messages .message-item.error {
-    background-color: #dc3545; /* Darker red */
-    color: #ffffff;
-}
-.flash-messages .message-item.info {
-    background-color: #007bff; /* Darker blue */
-    color: #ffffff;
-}
-
-/* Buttons */
-.button, button[type="submit"], .action-button {
-    padding: 14px 28px;
+.control-btn {
+    background: rgba(255, 255, 255, 0.2);
     border: none;
-    border-radius: 50px;
-    background-color: #6a40a8; /* Purple-ish default button */
-    color: #FFF;
-    font-weight: bold;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
     transition: all 0.3s ease;
-    text-decoration: none;
-    display: inline-flex;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.control-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.control-btn:active {
+    transform: scale(0.95);
+}
+
+.play-pause-btn {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #ff6b6b, #feca57);
+}
+
+.play-pause-btn:hover {
+    background: linear-gradient(135deg, #ff5252, #ffca28);
+    box-shadow: 0 10px 25px rgba(255, 107, 107, 0.4);
+}
+
+.control-icon {
+    width: 24px;
+    height: 24px;
+    fill: white;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.play-pause-btn .control-icon {
+    width: 32px;
+    height: 32px;
+}
+
+.volume-container {
+    margin-top: 20px;
+    display: flex;
     align-items: center;
     justify-content: center;
-    margin: 8px;
-    font-size: 1.05em;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    gap: 10px;
 }
 
-.button:hover, button[type="submit"]:hover, .action-button:hover {
-    background-color: #8c5cdb; /* Lighter purple on hover */
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-}
-
-.button i, .action-button i {
-    margin-right: 8px;
-    font-size: 1.1em;
-}
-
-.spotify-button {
-    background-color: #1DB954; /* Spotify Green */
-    font-size: 1.15em;
-    padding: 16px 32px;
-}
-.spotify-button:hover {
-    background-color: #1ED760; /* Lighter Spotify Green */
-}
-
-.discord-login-button {
-    background-color: #7289DA; /* Discord Blue */
-    font-size: 1.15em;
-    padding: 16px 32px;
-}
-.discord-login-button:hover {
-    background-color: #8C9EFF;
-}
-
-.discord-logout-button {
-    background-color: #e62e2e; /* Brighter red for logout */
-}
-.discord-logout-button:hover {
-    background-color: #ff4d4d;
-}
-
-/* Control Grids */
-.controls-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    justify-content: center;
-    margin-top: 25px;
-}
-
-/* Input Styles */
-input[type="text"], input[type="number"] {
-    padding: 14px;
-    border: 1px solid #444;
-    border-radius: 10px; /* More rounded inputs */
-    background-color: #333;
-    color: #FFF;
-    font-size: 1.0em;
+.volume-slider {
+    width: 100px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
     outline: none;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
+    -webkit-appearance: none;
 }
 
-input[type="text"]:focus, input[type="number"]:focus {
-    border-color: #1DB954; /* Green focus border */
-    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2), 0 0 8px rgba(29, 185, 84, 0.5);
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: white;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
-.play-form, .speak-form {
-    display: flex;
-    flex-grow: 1;
-    max-width: 100%;
-    gap: 10px;
-    justify-content: center;
-    align-items: center;
-}
-
-.play-form input[type="text"], .speak-form input[type="text"] {
-    flex: 1;
-    min-width: 200px; /* Ensure input is not too small */
-}
-
-/* Volume Control Specifics */
-.volume-device-controls {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    justify-content: center;
-    align-items: center;
-    margin-top: 15px;
-}
-
-.volume-form {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-.volume-input {
-    width: 80px; /* Fixed width for volume */
-    text-align: center;
-    opacity: 0; /* Hidden by default */
-    transform: translateX(-10px); /* Slide in effect */
-    transition: opacity 0.3s ease, transform 0.3s ease;
-    pointer-events: none; /* Make it unclickable when hidden */
-}
-
-.volume-input.active {
-    opacity: 1; /* Visible when active */
-    transform: translateX(0); /* Slide in */
-    pointer-events: auto; /* Clickable when active */
-}
-
-.send-volume-button {
-    background-color: #4CAF50; /* Green checkmark button */
-}
-.send-volume-button:hover {
-    background-color: #66BB6A;
-}
-
-/* Horizontal Rule (Divider) */
-.divider {
-    border: none;
-    border-top: 2px solid #333;
-    margin: 50px 0;
-    width: 80%;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-/* Footer */
-.footer {
-    margin-top: 50px;
-    padding-top: 20px;
-    border-top: 1px solid #333;
-    font-size: 0.9em;
-    color: #888;
-}
-
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-    .container {
-        padding: 25px;
-    }
-    .header h1 {
-        font-size: 2.2em;
-    }
-    .header-icon {
-        width: 50px;
-        height: 50px;
-    }
-    .section-title {
-        font-size: 1.6em;
-    }
-    .section-subtitle {
-        font-size: 1.4em;
-    }
-    .button, button[type="submit"], .action-button {
-        padding: 12px 20px;
-        font-size: 0.95em;
-        margin: 6px;
-    }
-    .spotify-button, .discord-login-button {
-        padding: 14px 28px;
-        font-size: 1.05em;
-    }
-    .play-form, .speak-form, .volume-form, .controls-grid {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
-    }
-    .play-form input[type="text"], .speak-form input[type="text"], .volume-form input[type="number"] {
-        width: 100%;
-        min-width: unset;
-        margin-bottom: 5px; /* Add margin to separate from button */
-    }
-    .play-form button, .speak-form button, .volume-form button, .volume-toggle-button, .send-volume-button {
-        width: 100%;
-    }
-    .volume-input {
-        width: 100%; /* Ensure full width on mobile */
-    }
+.volume-icon {
+    width: 20px;
+    height: 20px;
+    fill: rgba(255, 255, 255, 0.8);
 }
 
 @media (max-width: 480px) {
-    .container {
-        padding: 15px;
+    .player-container {
+        padding: 30px 20px;
     }
-    .header h1 {
-        font-size: 1.8em;
+    
+    .album-art {
+        width: 200px;
+        height: 200px;
     }
-    .header-icon {
-        width: 40px;
-        height: 40px;
-    }
-    .section-title {
-        font-size: 1.4em;
-    }
-    .section-subtitle {
-        font-size: 1.2em;
-    }
-    .button, button[type="submit"], .action-button {
-        padding: 10px 15px;
-        font-size: 0.85em;
-        margin: 4px;
+    
+    .song-title {
+        font-size: 20px;
     }
 }

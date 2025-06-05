@@ -1,97 +1,204 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Discord Bot Control</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        h1 { color: #5c6bc0; }
-        .section { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background-color: #e8eaf6; }
-        .status { font-weight: bold; }
-        .linked { color: green; }
-        .unlinked { color: red; }
-        .btn { display: inline-block; padding: 10px 15px; margin: 5px 0; border-radius: 5px; text-decoration: none; color: white; cursor: pointer; }
-        .btn-primary { background-color: #7986cb; }
-        .btn-danger { background-color: #ef5350; }
-        .btn-spotify { background-color: #1DB954; }
-        .btn:hover { opacity: 0.9; }
-        .message { padding: 10px; margin-bottom: 10px; border-radius: 5px; }
-        .message.success { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
-        .message.error { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
-        .message.info { background-color: #d1ecf1; color: #0c5460; border-color: #bee5eb; }
-        input[type="text"], input[type="number"] { padding: 8px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; width: calc(100% - 20px); }
-        .flex-group { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Discord Bot Control Panel</h1>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <ul class="flashes">
-                    {% for category, message in messages %}
-                        <li class="message {{ category }}">{{ message }}</li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        {% endwith %}
-
-        <div class="section">
-            <h2>Discord Connection</h2>
-            <p>Status:
-                <span class="status {% if is_discord_linked %}linked{% else %}unlinked{% endif %}">
-                    {% if is_discord_linked %}
-                        เชื่อมต่อแล้ว (User ID: {{ discord_user_id }})
-                    {% else %}
-                        ยังไม่ได้เชื่อมต่อ
-                    {% endif %}
-                </span>
-            </p>
-            {% if not is_discord_linked %}
-                <a href="{{ url_for('login_discord') }}" class="btn btn-primary">เชื่อมต่อ Discord</a>
-            {% else %}
-                <a href="{{ url_for('logout_discord') }}" class="btn btn-danger">ออกจากระบบ Discord</a>
-            {% endif %}
+    <div class="player-container">
+        <div class="album-art" id="albumArt">
+            <img id="coverImage" src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop&crop=center" alt="Album Cover">
         </div>
-
-        {% if is_discord_linked %}
-        <div class="section">
-            <h2>Spotify Control (สำหรับ Discord User ID: {{ discord_user_id }})</h2>
-            <p>Status:
-                <span class="status {% if is_spotify_linked %}linked{% else %}unlinked{% endif %}">
-                    {% if is_spotify_linked %}
-                        เชื่อมต่อแล้ว
-                    {% else %}
-                        ยังไม่ได้เชื่อมต่อ
-                    {% endif %}
-                </span>
-            </p>
-            {% if not is_spotify_linked %}
-                <a href="{{ url_for('login_spotify_web', discord_user_id_param=discord_user_id) }}" class="btn btn-spotify">เชื่อมต่อ Spotify</a>
-            {% else %}
-                <form action="{{ url_for('control_spotify', action='play_query') }}" method="get" class="flex-group">
-                    <input type="text" name="query" placeholder="ชื่อเพลง, ศิลปิน, หรือลิงก์ Spotify" style="flex-grow: 1;">
-                    <button type="submit" class="btn btn-spotify">เล่น</button>
-                </form>
-                <div style="display: flex; gap: 10px;">
-                    <a href="{{ url_for('control_spotify', action='pause') }}" class="btn btn-primary">หยุดชั่วคราว</a>
-                    <a href="{{ url_for('control_spotify', action='resume') }}" class="btn btn-primary">เล่นต่อ</a>
-                    <a href="{{ url_for('control_spotify', action='skip') }}" class="btn btn-primary">ข้าม</a>
-                    <a href="{{ url_for('control_spotify', action='previous') }}" class="btn btn-primary">เพลงก่อนหน้า</a>
-                </div>
-                <div class="flex-group">
-                    <input type="number" name="level" form="volumeForm" min="0" max="100" placeholder="ระดับเสียง (0-100)" style="flex-grow: 1;">
-                    <form id="volumeForm" action="{{ url_for('control_spotify', action='set_volume') }}" method="get" style="display: inline;">
-                        <button type="submit" class="btn btn-primary">ปรับเสียง</button>
-                    </form>
-                </div>
-                <a href="{{ url_for('control_spotify', action='devices') }}" class="btn btn-info">ดูอุปกรณ์</a>
-            {% endif %}
+        
+        <div class="song-info">
+            <div class="song-title" id="songTitle">Sunset Dreams</div>
+            <div class="artist-name" id="artistName">The Midnight Collective</div>
         </div>
-        {% endif %}
+        
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        
+        <div class="controls">
+            <button class="control-btn" id="prevBtn" title="Previous">
+                <svg class="control-icon" viewBox="0 0 24 24">
+                    <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+                </svg>
+            </button>
+            
+            <button class="control-btn play-pause-btn" id="playPauseBtn" title="Play/Pause">
+                <svg class="control-icon" id="playIcon" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
+                </svg>
+                <svg class="control-icon" id="pauseIcon" viewBox="0 0 24 24" style="display: none;">
+                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                </svg>
+            </button>
+            
+            <button class="control-btn" id="nextBtn" title="Next">
+                <svg class="control-icon" viewBox="0 0 24 24">
+                    <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="volume-container">
+            <svg class="volume-icon" viewBox="0 0 24 24">
+                <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+            </svg>
+            <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="70">
+        </div>
     </div>
+
+    <script>
+        const songs = [
+            {
+                title: "Sunset Dreams",
+                artist: "The Midnight Collective",
+                cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop&crop=center"
+            },
+            {
+                title: "Ocean Waves",
+                artist: "Coastal Vibes",
+                cover: "https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=400&h=400&fit=crop&crop=center"
+            },
+            {
+                title: "City Lights",
+                artist: "Urban Echo",
+                cover: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&h=400&fit=crop&crop=center"
+            },
+            {
+                title: "Forest Path",
+                artist: "Nature's Symphony",
+                cover: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=400&fit=crop&crop=center"
+            },
+            {
+                title: "Neon Nights",
+                artist: "Synthwave Station",
+                cover: "https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=400&h=400&fit=crop&crop=center"
+            }
+        ];
+
+        let currentSongIndex = 0;
+        let isPlaying = false;
+        let progress = 0;
+        let progressInterval;
+
+        // DOM elements
+        const albumArt = document.getElementById('albumArt');
+        const coverImage = document.getElementById('coverImage');
+        const songTitle = document.getElementById('songTitle');
+        const artistName = document.getElementById('artistName');
+        const progressBar = document.getElementById('progressBar');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const playIcon = document.getElementById('playIcon');
+        const pauseIcon = document.getElementById('pauseIcon');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const volumeSlider = document.getElementById('volumeSlider');
+
+        // Update song display
+        function updateSongDisplay() {
+            const currentSong = songs[currentSongIndex];
+            songTitle.textContent = currentSong.title;
+            artistName.textContent = currentSong.artist;
+            coverImage.src = currentSong.cover;
+            coverImage.alt = `${currentSong.title} by ${currentSong.artist}`;
+        }
+
+        // Toggle play/pause
+        function togglePlayPause() {
+            isPlaying = !isPlaying;
+            
+            if (isPlaying) {
+                playIcon.style.display = 'none';
+                pauseIcon.style.display = 'block';
+                albumArt.classList.add('playing');
+                startProgress();
+            } else {
+                playIcon.style.display = 'block';
+                pauseIcon.style.display = 'none';
+                albumArt.classList.remove('playing');
+                stopProgress();
+            }
+        }
+
+        // Progress simulation
+        function startProgress() {
+            progressInterval = setInterval(() => {
+                progress += 0.5;
+                if (progress >= 100) {
+                    progress = 0;
+                    nextSong();
+                }
+                progressBar.style.width = progress + '%';
+            }, 100);
+        }
+
+        function stopProgress() {
+            clearInterval(progressInterval);
+        }
+
+        // Previous song
+        function prevSong() {
+            currentSongIndex = (currentSongIndex - 1 + songs.length) % songs.length;
+            progress = 0;
+            progressBar.style.width = '0%';
+            updateSongDisplay();
+            
+            if (isPlaying) {
+                stopProgress();
+                startProgress();
+            }
+        }
+
+        // Next song
+        function nextSong() {
+            currentSongIndex = (currentSongIndex + 1) % songs.length;
+            progress = 0;
+            progressBar.style.width = '0%';
+            updateSongDisplay();
+            
+            if (isPlaying) {
+                stopProgress();
+                startProgress();
+            }
+        }
+
+        // Event listeners
+        playPauseBtn.addEventListener('click', togglePlayPause);
+        prevBtn.addEventListener('click', prevSong);
+        nextBtn.addEventListener('click', nextSong);
+
+        // Volume control
+        volumeSlider.addEventListener('input', (e) => {
+            const volume = e.target.value;
+            // In a real implementation, this would control actual audio volume
+            console.log('Volume set to:', volume + '%');
+        });
+
+        // Progress bar click
+        document.querySelector('.progress-container').addEventListener('click', (e) => {
+            const rect = e.target.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const newProgress = (clickX / rect.width) * 100;
+            progress = newProgress;
+            progressBar.style.width = progress + '%';
+        });
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            switch(e.code) {
+                case 'Space':
+                    e.preventDefault();
+                    togglePlayPause();
+                    break;
+                case 'ArrowLeft':
+                    prevSong();
+                    break;
+                case 'ArrowRight':
+                    nextSong();
+                    break;
+            }
+        });
+
+        // Initialize
+        updateSongDisplay();
+    </script>
 </body>
 </html>
