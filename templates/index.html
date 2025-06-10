@@ -3,294 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Music Player</title>
+    <title>Discord Spotify Bot Control</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS for Inter font and any overrides -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
 </head>
-<body>
-    <div class="player-container">
-        <div class="album-art" id="albumArt">
-            <img id="coverImage" src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop&crop=center" alt="Album Cover">
-        </div>
-        
-        <div class="song-info">
-            <div class="song-title" id="songTitle">Sunset Dreams</div>
-            <div class="artist-name" id="artistName">The Midnight Collective</div>
-        </div>
-        
-        <div class="progress-container">
-            <div class="progress-bar" id="progressBar"></div>
-        </div>
-        
-        <div class="controls">
-            <button class="control-btn" id="prevBtn" title="Previous">
-                <svg class="control-icon" viewBox="0 0 24 24">
-                    <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
-                </svg>
-            </button>
-            
-            <button class="control-btn play-pause-btn" id="playPauseBtn" title="Play/Pause">
-                <svg class="control-icon" id="playIcon" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z"/>
-                </svg>
-                <svg class="control-icon" id="pauseIcon" viewBox="0 0 24 24" style="display: none;">
-                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
-                </svg>
-            </button>
-            
-            <button class="control-btn" id="nextBtn" title="Next">
-                <svg class="control-icon" viewBox="0 0 24 24">
-                    <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
-                </svg>
-            </button>
-        </div>
-        
-        <div class="volume-container">
-            <svg class="volume-icon" viewBox="0 0 24 24">
-                <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
-            </svg>
-            <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="70">
-        </div>
-        
-        <div class="auth-container">
-            <button class="auth-btn discord-btn" id="discordLoginBtn">
-                <svg class="auth-icon" viewBox="0 0 24 24">
-                    <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419-.0188 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1568 2.4189Z"/>
-                </svg>
-                Login with Discord
-            </button>
-            
-            <button class="auth-btn spotify-btn" id="spotifyLoginBtn" style="display: none;">
-                <svg class="auth-icon" viewBox="0 0 24 24">
-                    <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.6 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.42 1.56-.299.421-1.02.599-1.559.3z"/>
-                </svg>
-                Connect Spotify
-            </button>
-            
-            <div class="user-info" id="userInfo" style="display: none;">
-                <div class="status-indicator"></div>
-                <span id="userStatus">Connected</span>
+<body class="bg-gradient-to-br from-purple-800 to-indigo-900 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-gray-800 bg-opacity-90 p-8 md:p-12 rounded-xl shadow-2xl w-full max-w-2xl text-white border border-purple-700">
+        <h1 class="text-4xl font-bold text-center mb-8 text-purple-300">ควบคุมบอท Discord Spotify</h1>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mb-6 space-y-3">
+                    {% for category, message in messages %}
+                        <div class="p-4 rounded-lg text-sm {% if category == 'success' %}bg-green-600{% elif category == 'error' %}bg-red-600{% else %}bg-blue-600{% endif %} bg-opacity-80 shadow-md">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Connection Status -->
+        <div class="mb-8 p-6 bg-gray-700 bg-opacity-70 rounded-lg shadow-inner">
+            <h2 class="text-2xl font-semibold mb-4 text-purple-200">สถานะการเชื่อมต่อ</h2>
+            <div class="space-y-3">
+                <p class="flex items-center text-lg">
+                    <span class="mr-3">Discord:</span>
+                    {% if is_discord_linked %}
+                        <span class="text-green-400 font-medium">เชื่อมโยงแล้ว (ID: {{ discord_user_id }})</span>
+                    {% else %}
+                        <span class="text-red-400 font-medium">ยังไม่เชื่อมโยง</span>
+                        <a href="{{ url_for('login_discord') }}" class="ml-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition duration-300">เข้าสู่ระบบ Discord</a>
+                    {% endif %}
+                </p>
+                <p class="flex items-center text-lg">
+                    <span class="mr-3">Spotify:</span>
+                    {% if is_spotify_linked %}
+                        <span class="text-green-400 font-medium">เชื่อมโยงแล้ว</span>
+                    {% else %}
+                        <span class="text-red-400 font-medium">ยังไม่เชื่อมโยง</span>
+                        {% if is_discord_linked %}
+                            <a href="{{ url_for('login_spotify_web', discord_user_id_param=discord_user_id) }}" class="ml-4 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg shadow-md transition duration-300">เชื่อมโยง Spotify</a>
+                        {% else %}
+                            <span class="ml-4 text-gray-400">เข้าสู่ระบบ Discord ก่อน</span>
+                        {% endif %}
+                    {% endif %}
+                </p>
             </div>
         </div>
+
+        <!-- Web Control for Music Queue (Placeholder) -->
+        <div class="mb-8 p-6 bg-gray-700 bg-opacity-70 rounded-lg shadow-inner">
+            <h2 class="text-2xl font-semibold mb-4 text-purple-200">ควบคุมเพลง (ผ่านเว็บ - สำหรับคิว)</h2>
+            <form action="{{ url_for('add_web_queue') }}" method="post" class="flex flex-col md:flex-row gap-4 mb-4">
+                <input type="text" name="url" placeholder="เพิ่ม URL เพลง (YouTube, SoundCloud, etc.)"
+                       class="flex-grow p-3 rounded-lg bg-gray-600 border border-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder-gray-400">
+                <button type="submit" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg shadow-md font-semibold transition duration-300">
+                    เพิ่มลงคิว
+                </button>
+            </form>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <a href="{{ url_for('play_web_control') }}" class="button-control bg-blue-600 hover:bg-blue-700">▶️ เล่น</a>
+                <a href="{{ url_for('pause_web_control') }}" class="button-control bg-yellow-600 hover:bg-yellow-700">⏸️ หยุดชั่วคราว</a>
+                <a href="{{ url_for('resume_web_control') }}" class="button-control bg-green-600 hover:bg-green-700">⏯️ เล่นต่อ</a>
+                <a href="{{ url_for('skip_web_control') }}" class="button-control bg-indigo-600 hover:bg-indigo-700">⏭️ ข้าม</a>
+                <a href="{{ url_for('stop_web_control') }}" class="button-control bg-red-600 hover:bg-red-700">⏹️ หยุด</a>
+                <a href="{{ url_for('volume_up_web_control') }}" class="button-control bg-gray-600 hover:bg-gray-700">🔊 เพิ่มเสียง</a>
+                <a href="{{ url_for('volume_down_web_control') }}" class="button-control bg-gray-600 hover:bg-gray-700">🔉 ลดเสียง</a>
+            </div>
+        </div>
+
+        <p class="text-center text-gray-400 text-sm mt-8">
+            บอท Discord Spotify โดย [ชื่อของคุณ/ชื่อบอทของคุณ]
+        </p>
     </div>
 
     <script>
-        const songs = [
-            {
-                title: "Sunset Dreams",
-                artist: "The Midnight Collective",
-                cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop&crop=center"
-            },
-            {
-                title: "Ocean Waves",
-                artist: "Coastal Vibes",
-                cover: "https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=400&h=400&fit=crop&crop=center"
-            },
-            {
-                title: "City Lights",
-                artist: "Urban Echo",
-                cover: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&h=400&fit=crop&crop=center"
-            },
-            {
-                title: "Forest Path",
-                artist: "Nature's Symphony",
-                cover: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=400&fit=crop&crop=center"
-            },
-            {
-                title: "Neon Nights",
-                artist: "Synthwave Station",
-                cover: "https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=400&h=400&fit=crop&crop=center"
-            }
-        ];
-
-        let currentSongIndex = 0;
-        let isPlaying = false;
-        let progress = 0;
-        let progressInterval;
-
-        // DOM elements
-        const albumArt = document.getElementById('albumArt');
-        const coverImage = document.getElementById('coverImage');
-        const songTitle = document.getElementById('songTitle');
-        const artistName = document.getElementById('artistName');
-        const progressBar = document.getElementById('progressBar');
-        const playPauseBtn = document.getElementById('playPauseBtn');
-        const playIcon = document.getElementById('playIcon');
-        const pauseIcon = document.getElementById('pauseIcon');
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
-        const volumeSlider = document.getElementById('volumeSlider');
-
-        // Update song display
-        function updateSongDisplay() {
-            const currentSong = songs[currentSongIndex];
-            songTitle.textContent = currentSong.title;
-            artistName.textContent = currentSong.artist;
-            coverImage.src = currentSong.cover;
-            coverImage.alt = `${currentSong.title} by ${currentSong.artist}`;
-        }
-
-        // Toggle play/pause
-        function togglePlayPause() {
-            isPlaying = !isPlaying;
-            
-            if (isPlaying) {
-                playIcon.style.display = 'none';
-                pauseIcon.style.display = 'block';
-                albumArt.classList.add('playing');
-                startProgress();
-            } else {
-                playIcon.style.display = 'block';
-                pauseIcon.style.display = 'none';
-                albumArt.classList.remove('playing');
-                stopProgress();
-            }
-        }
-
-        // Progress simulation
-        function startProgress() {
-            progressInterval = setInterval(() => {
-                progress += 0.5;
-                if (progress >= 100) {
-                    progress = 0;
-                    nextSong();
-                }
-                progressBar.style.width = progress + '%';
-            }, 100);
-        }
-
-        function stopProgress() {
-            clearInterval(progressInterval);
-        }
-
-        // Previous song
-        function prevSong() {
-            currentSongIndex = (currentSongIndex - 1 + songs.length) % songs.length;
-            progress = 0;
-            progressBar.style.width = '0%';
-            updateSongDisplay();
-            
-            if (isPlaying) {
-                stopProgress();
-                startProgress();
-            }
-        }
-
-        // Next song
-        function nextSong() {
-            currentSongIndex = (currentSongIndex + 1) % songs.length;
-            progress = 0;
-            progressBar.style.width = '0%';
-            updateSongDisplay();
-            
-            if (isPlaying) {
-                stopProgress();
-                startProgress();
-            }
-        }
-
-        // Event listeners
-        playPauseBtn.addEventListener('click', togglePlayPause);
-        prevBtn.addEventListener('click', prevSong);
-        nextBtn.addEventListener('click', nextSong);
-
-        // Volume control
-        volumeSlider.addEventListener('input', (e) => {
-            const volume = e.target.value;
-            // In a real implementation, this would control actual audio volume
-            console.log('Volume set to:', volume + '%');
+        // Optional: JavaScript for fade-out flash messages or other client-side enhancements
+        document.addEventListener('DOMContentLoaded', () => {
+            const flashMessages = document.querySelectorAll('.flash-message');
+            flashMessages.forEach(msg => {
+                setTimeout(() => {
+                    msg.style.transition = 'opacity 0.5s ease-out';
+                    msg.style.opacity = '0';
+                    setTimeout(() => msg.remove(), 500);
+                }, 5000); // Messages disappear after 5 seconds
+            });
         });
-
-        // Progress bar click
-        document.querySelector('.progress-container').addEventListener('click', (e) => {
-            const rect = e.target.getBoundingClientRect();
-            const clickX = e.clientX - rect.left;
-            const newProgress = (clickX / rect.width) * 100;
-            progress = newProgress;
-            progressBar.style.width = progress + '%';
-        });
-
-        // Keyboard controls
-        document.addEventListener('keydown', (e) => {
-            switch(e.code) {
-                case 'Space':
-                    e.preventDefault();
-                    togglePlayPause();
-                    break;
-                case 'ArrowLeft':
-                    prevSong();
-                    break;
-                case 'ArrowRight':
-                    nextSong();
-                    break;
-            }
-        });
-
-        // Authentication functionality
-        const discordLoginBtn = document.getElementById('discordLoginBtn');
-        const spotifyLoginBtn = document.getElementById('spotifyLoginBtn');
-        const userInfo = document.getElementById('userInfo');
-        const userStatus = document.getElementById('userStatus');
-
-        // Check authentication status on page load
-        checkAuthStatus();
-
-        // Discord login
-        discordLoginBtn.addEventListener('click', () => {
-            window.location.href = '/login/discord';
-        });
-
-        // Spotify login
-        spotifyLoginBtn.addEventListener('click', () => {
-            // This would need the Discord user ID from your Flask session
-            // For demo purposes, showing the flow
-            const discordUserId = getDiscordUserId(); // You'd implement this
-            if (discordUserId) {
-                window.location.href = `/login/spotify/${discordUserId}`;
-            }
-        });
-
-        function checkAuthStatus() {
-            // This would check with your Flask backend for auth status
-            // For demo purposes, showing the UI flow
-            
-            // Simulate checking authentication
-            setTimeout(() => {
-                const isDiscordLinked = checkDiscordAuth(); // You'd implement this
-                const isSpotifyLinked = checkSpotifyAuth(); // You'd implement this
-                
-                if (isDiscordLinked) {
-                    discordLoginBtn.style.display = 'none';
-                    spotifyLoginBtn.style.display = 'flex';
-                    
-                    if (isSpotifyLinked) {
-                        spotifyLoginBtn.style.display = 'none';
-                        userInfo.style.display = 'flex';
-                        userStatus.textContent = 'Discord & Spotify Connected';
-                    }
-                }
-            }, 1000);
-        }
-
-        function checkDiscordAuth() {
-            // Check if Discord is authenticated
-            // This would make a request to your Flask backend
-            return false; // Placeholder
-        }
-
-        function checkSpotifyAuth() {
-            // Check if Spotify is authenticated
-            // This would make a request to your Flask backend
-            return false; // Placeholder
-        }
-
-        function getDiscordUserId() {
-            // Get Discord user ID from session/backend
-            // This would make a request to your Flask backend
-            return null; // Placeholder
-        }
-
-        // Initialize
-        updateSongDisplay();
     </script>
 </body>
 </html>
