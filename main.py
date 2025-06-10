@@ -90,6 +90,7 @@ def save_spotify_tokens():
     try:
         tokens_data = {}
         for user_id, sp_client in spotify_users.items():
+            # Get cached token info directly from auth_manager
             token_info = sp_client.auth_manager.get_cached_token()
             if token_info:
                 tokens_data[str(user_id)] = token_info
@@ -107,15 +108,19 @@ def load_spotify_tokens():
             with open("spotify_tokens.json", "r") as f:
                 tokens_data = json.load(f)
             # Iterate through loaded tokens and initialize Spotify clients
-            for user_id_str, token_info in list(tokens_data.items()): # Use list() to allow deletion during iteration
+            # Use list() to allow deletion during iteration if a token is invalid
+            for user_id_str, token_info in list(tokens_data.items()): 
                 user_id = int(user_id_str)
                 auth_manager = SpotifyOAuth(
                     client_id=SPOTIPY_CLIENT_ID,
                     client_secret=SPOTIPY_CLIENT_SECRET,
                     redirect_uri=SPOTIPY_REDIRECT_URI,
                     scope=SPOTIPY_SCOPES,
-                    token_info=token_info # Use cached token info
+                    # token_info is no longer passed here directly
                 )
+                # Set the cached token after initializing SpotifyOAuth
+                auth_manager.set_cached_token(token_info)
+
                 sp_user = spotipy.Spotify(auth_manager=auth_manager)
                 try:
                     # Validate token by making a simple API call
@@ -516,7 +521,7 @@ def discord_callback():
             _fetch_discord_token_and_user(code),
             bot.loop
         )
-        token_info, user_data = future.result(timeout=10) # Wait for result with timeout
+        token_info, user_data = future.result(timeout=10) # Wait for result
         
         discord_user_id = int(user_data["id"])
         discord_username = user_data["username"]
@@ -575,7 +580,7 @@ def login_spotify_web(discord_user_id_param: int):
         flash("❌ Discord User ID mismatch. Please login with Discord again.", "error")
         return redirect(url_for("index"))
 
-    # Initialize Spotify OAuth manager
+    # Initialize Spotify OAuth manager without token_info
     auth_manager = SpotifyOAuth(
         client_id=SPOTIPY_CLIENT_ID,
         client_secret=SPOTIPY_CLIENT_SECRET,
@@ -604,31 +609,25 @@ def spotify_callback():
         flash("❌ Missing authorization code or Discord user ID for Spotify linking. Please try again.", "error")
         return redirect(url_for("index"))
 
-    # Initialize Spotify OAuth manager for token exchange
-    auth_manager = SpotifyOAuth(
-        client_id=SPOTIPY_CLIENT_ID,
-        client_secret=SPOTIPY_CLIENT_SECRET,
-        redirect_uri=SPOTIPY_REDIRECT_URI,
-        scope=SPOTIPY_SCOPES,
-    )
-
     try:
-        # Exchange authorization code for access token in bot's event loop
-        future = asyncio.run_coroutine_threadsafe(
-            asyncio.to_thread(auth_manager.get_access_token, code),
-            bot.loop
-        )
-        token_info = future.result(timeout=10) # Wait for result
-
-        # Create a new Spotify client with the obtained token info
-        auth_manager_with_token = SpotifyOAuth(
+        # Initialize Spotify OAuth manager
+        auth_manager = SpotifyOAuth(
             client_id=SPOTIPY_CLIENT_ID,
             client_secret=SPOTIPY_CLIENT_SECRET,
             redirect_uri=SPOTIPY_REDIRECT_URI,
             scope=SPOTIPY_SCOPES,
-            token_info=token_info
         )
-        sp_user = spotipy.Spotify(auth_manager=auth_manager_with_token)
+
+        # Exchange authorization code for access token in bot's event loop
+        # This call will also set the cached token within the auth_manager instance
+        future = asyncio.run_coroutine_threadsafe(
+            asyncio.to_thread(auth_manager.get_access_token, code),
+            bot.loop
+        )
+        token_info = future.result(timeout=10) # Get token_info, but it's already cached in auth_manager
+
+        # Create a new Spotify client using the auth_manager that now has the token
+        sp_user = spotipy.Spotify(auth_manager=auth_manager)
         spotify_users[discord_user_id] = sp_user # Store the Spotify client
         
         save_spotify_tokens() # Save tokens to file for persistence
