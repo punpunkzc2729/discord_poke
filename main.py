@@ -12,6 +12,10 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import httpx
 import asyncio
+import yt_dlp # Import yt-dlp for YouTube playback
+
+# Suppress yt_dlp console output
+yt_dlp.utils.bug_reports_message = lambda: ''
 
 # --- Load environment variables ---
 load_dotenv()
@@ -137,47 +141,102 @@ def load_spotify_tokens():
     except Exception as e:
         logging.error(f"Error loading Spotify tokens: {e}", exc_info=True)
 
+# Callback function for after audio playback finishes
+async def _after_playback_cleanup(error, channel_id):
+    if error:
+        logging.error(f"Audio playback error: {error}")
+        # Optionally send error message to Discord channel
+        channel = bot.get_channel(channel_id)
+        if channel:
+            await channel.send(f"❌ Error during playback: {error}")
+    
+    # Try to play the next song in the queue
+    if queue and voice_client and voice_client.is_connected() and not voice_client.is_playing():
+        channel = bot.get_channel(channel_id)
+        if channel:
+            await _play_next_in_queue(channel)
+    elif not queue and voice_client and voice_client.is_connected() and not voice_client.is_playing():
+        logging.info("Queue finished.")
+        channel = bot.get_channel(channel_id)
+        if channel:
+            await channel.send("✅ Queue finished!")
+
+
 async def _play_next_in_queue(channel: discord.VoiceChannel):
-    """Plays the next song in the queue (for web controls)"""
+    """Plays the next song in the queue, supporting YouTube URLs."""
     global voice_client, queue, volume
 
-    # Ensure bot is in a voice channel
     if not voice_client or not voice_client.is_connected():
         logging.warning("Bot not in a voice channel to play queue.")
         return
 
-    # If already playing, stop current playback
     if voice_client.is_playing():
         voice_client.stop()
 
-    # If there are songs in the queue
-    if queue:
-        url = queue.pop(0) # Get the next URL from the queue
-        logging.info(f"Playing from queue: {url}")
-        
-        try:
-            # Placeholder for actual audio playback logic (e.g., from YouTube or direct audio link)
-            # This part would need a library like youtube_dl or pytube to extract audio streams.
-            # For simplicity, let's assume we're playing a local file or a direct audio URL.
-            # This would likely involve fetching the audio stream and then playing it.
-            # Example (this is highly simplified and needs robust error handling and streaming):
-            # source = discord.FFmpegPCMAudio(url, executable="ffmpeg")
-            # voice_client.play(source, after=lambda e: bot.loop.create_task(_play_next_in_queue(channel)))
-            
-            # For demonstration, let's just log and skip for now as direct URL playback is complex
-            logging.info(f"Playback for {url} is not implemented yet. Skipping.")
-            await channel.send(f"⚠️ Playback for direct URL/queue is not fully implemented yet.")
-            await asyncio.sleep(1) # Give a small delay before trying next
-            await _play_next_in_queue(channel) # Try to play next if current skipped
-            
-        except Exception as e:
-            logging.error(f"Error playing queued item {url}: {e}", exc_info=True)
-            await channel.send(f"❌ Could not play: {url}. Error: {e}")
-            await asyncio.sleep(1)
-            await _play_next_in_queue(channel)
-    else:
+    if not queue:
         logging.info("Queue is empty.")
         await channel.send("✅ Queue finished!")
+        return
+
+    url = queue.pop(0) # Get the next URL from the queue
+    logging.info(f"Attempting to play from queue: {url}")
+    
+    # Check if the URL is a YouTube link
+    if "youtube.com/" in url or "youtu.be/" in url:
+        ydl_opts = {
+            'format': 'bestaudio/best', # Select best audio format
+            'noplaylist': True,        # Don't download entire playlists
+            'default_search': 'ytsearch', # If just a name, search YouTube
+            'source_address': '0.0.0.0', # Resolve issues on some Linux systems
+            'verbose': False, # Set to True for debugging yt-dlp output
+            'extract_flat': 'in_playlist', # For playlists, extract info without fetching all
+        }
+
+        try:
+            # Use asyncio.to_thread for blocking yt_dlp operations
+            # This ensures the Discord bot's event loop isn't blocked
+            loop = asyncio.get_event_loop()
+            info = await loop.run_in_executor(None, lambda: yt_dlp.YoutubeDL(ydl_opts).extract_info(url, download=False))
+            
+            # If the query was a search term or a playlist, info might contain 'entries'
+            if 'entries' in info and info['entries']:
+                # Pick the first entry for simplicity or iterate for playlist support
+                selected_info = info['entries'][0]
+            else:
+                selected_info = info
+
+            audio_url = selected_info['url']
+            title = selected_info.get('title', 'Unknown Title')
+            
+            # Prepare FFmpeg audio source
+            source = discord.FFmpegPCMAudio(audio_url, executable="ffmpeg")
+            
+            # Play the audio and schedule cleanup/next song
+            voice_client.play(source, after=lambda e: asyncio.run_coroutine_threadsafe(
+                _after_playback_cleanup(e, channel.id), bot.loop))
+            
+            await channel.send(f"🎶 Playing YouTube: **{title}**")
+
+        except Exception as e:
+            logging.error(f"Error playing YouTube item {url}: {e}", exc_info=True)
+            await channel.send(f"❌ Could not play YouTube video: {url}. Error: {e}")
+            await asyncio.sleep(1) # Small delay before trying next
+            # Automatically try to play the next song in the queue if current failed
+            if queue and voice_client and voice_client.is_connected():
+                await _play_next_in_queue(channel)
+            elif not queue:
+                await channel.send("✅ Queue finished!")
+    else:
+        # Handle non-YouTube URLs or other types of media if needed
+        # For now, just log and skip
+        logging.info(f"Playback for non-YouTube URL {url} is not fully implemented yet. Skipping.")
+        await channel.send(f"⚠️ Playback for non-YouTube URL {url} is not fully implemented yet. Skipping.")
+        await asyncio.sleep(1)
+        # Automatically try to play the next song in the queue
+        if queue and voice_client and voice_client.is_connected():
+            await _play_next_in_queue(channel)
+        elif not queue:
+            await channel.send("✅ Queue finished!")
 
 
 # --- Discord Bot Events ---
