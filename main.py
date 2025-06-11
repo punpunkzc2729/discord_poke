@@ -45,6 +45,10 @@ voice_client = None
 queue = []  
 volume = 1.0
 
+# --- Poll System Global Variables ---
+# Key: poll_message_id, Value: {"question": str, "options": list[str], "votes": {option_str: set[user_id]}}
+active_polls = {}
+
 # --- Configure Logging ---
 logging.basicConfig(
     level=logging.INFO,
@@ -59,6 +63,7 @@ logging.basicConfig(
 intents = discord.Intents.default()
 intents.message_content = True
 intents.voice_states = True # Required for bot to join/leave voice channels
+intents.members = True # Required for fetching member info for polls (if needed)
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 tree = bot.tree
@@ -425,6 +430,190 @@ async def random_name(interaction: discord.Interaction, names: str):
     except Exception as e:
         logging.error(f"Error in random_name command: {e}", exc_info=True)
         await interaction.response.send_message(f"❌ เกิดข้อผิดพลาดในการสุ่มชื่อ: {e}", ephemeral=True)
+
+# --- Poll System Classes ---
+class PollView(discord.ui.View):
+    def __init__(self, poll_id, question, options):
+        super().__init__(timeout=None) # Keep poll active indefinitely
+        self.poll_id = poll_id
+        self.question = question
+        self.options = options
+        
+        # Initialize votes if poll is new
+        if poll_id not in active_polls:
+            active_polls[poll_id] = {
+                "question": question,
+                "options": options,
+                "votes": {option: set() for option in options} # Use a set to store user IDs, preventing duplicate votes
+            }
+        
+        # Add buttons for each option
+        for i, option in enumerate(options):
+            # Limit button value to 100 characters if needed
+            self.add_item(discord.ui.Button(label=option, custom_id=f"poll_{poll_id}_{i}"))
+
+    async def on_timeout(self):
+        # This will be called if the view times out.
+        # For indefinite polls, this might not be reached unless explicitly stopped.
+        logging.info(f"Poll {self.poll_id} timed out.")
+        # You might want to disable buttons or remove the poll data here
+        # self.clear_items()
+        # await self.message.edit(view=self) # Disable interaction
+        # if self.poll_id in active_polls:
+        #     del active_polls[self.poll_id]
+
+    @discord.ui.button(label="Show Results", style=discord.ButtonStyle.secondary, custom_id="poll_show_results")
+    async def show_results_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # Refresh the poll message with current results
+        await self.update_poll_message(interaction.message)
+        await interaction.response.defer() # Acknowledge the button press without sending a new message
+
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        # Only allow interaction if it's the correct poll message
+        if interaction.message.id != self.poll_id:
+            await interaction.response.send_message("❌ This poll is no longer active or is a different poll.", ephemeral=True)
+            return False
+        return True
+
+    async def on_error(self, interaction: discord.Interaction, error: Exception, item: discord.ui.Item):
+        logging.error(f"Error in poll interaction: {error}", exc_info=True)
+        await interaction.followup.send(f"❌ An error occurred while processing your vote: {error}", ephemeral=True)
+
+    async def update_poll_message(self, message: discord.Message):
+        """Updates the poll message with current vote counts."""
+        poll_data = active_polls.get(message.id)
+        if not poll_data:
+            logging.warning(f"Attempted to update non-existent poll: {message.id}")
+            return
+
+        embed = discord.Embed(
+            title=f"📊 โพลล์: {poll_data['question']}",
+            color=discord.Color.purple()
+        )
+
+        results_text = ""
+        for option, voters in poll_data['votes'].items():
+            results_text += f"**{option}**: {len(voters)} โหวต\n"
+        
+        # Display who voted (optional, can be very long for many users)
+        # for option, voters in poll_data['votes'].items():
+        #     voter_names = [bot.get_user(uid).display_name if bot.get_user(uid) else f"User_{uid}" for uid in voters]
+        #     results_text += f"- {option} ({len(voters)}): {', '.join(voter_names) or 'ไม่มี'}\n"
+
+        embed.description = results_text if results_text else "ยังไม่มีคะแนนโหวต."
+        embed.set_footer(text=f"Poll ID: {message.id}")
+        
+        await message.edit(embed=embed, view=self)
+
+    # Dynamically create button callbacks for each option
+    # This is a bit advanced but allows associating each button with its option.
+    # Alternatively, you could use a single callback for all buttons and check custom_id.
+    async def _button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
+        poll_id_str, option_index_str = button.custom_id.split('_')[1:] # Extract poll_id and option_index
+        poll_id = int(poll_id_str)
+        option_index = int(option_index_str)
+        user_id = interaction.user.id
+        
+        poll_data = active_polls.get(poll_id)
+        if not poll_data:
+            await interaction.response.send_message("❌ โพลล์นี้ไม่ทำงานแล้ว.", ephemeral=True)
+            return
+        
+        selected_option = poll_data['options'][option_index]
+
+        # Check if user already voted for ANY option in this poll
+        user_already_voted_for_an_option = False
+        for option, voters in poll_data['votes'].items():
+            if user_id in voters:
+                user_already_voted_for_an_option = True
+                # Remove previous vote
+                voters.remove(user_id)
+                # logging.info(f"User {user_id} removed vote from {option}")
+                break # A user can only vote for one option in this setup
+
+        # Add new vote if not already voted for this specific option
+        if user_id not in poll_data['votes'][selected_option]:
+            poll_data['votes'][selected_option].add(user_id)
+            logging.info(f"User {user_id} voted for {selected_option} in poll {poll_id}")
+            vote_status = "โหวตแล้ว"
+        else:
+            # If user clicked the same option again, it means they are removing their vote (if single vote allowed)
+            # Or if multi-vote, this logic needs adjustment.
+            # For simplicity, if they click the same one again, we assume they are confirming their vote or re-voting
+            # For single vote per poll, this branch means they switched their vote.
+            # We already removed the old vote above, so just update.
+            vote_status = "เปลี่ยนโหวต"
+            logging.info(f"User {user_id} re-voted for {selected_option} in poll {poll_id}")
+            
+        await self.update_poll_message(interaction.message)
+        await interaction.response.send_message(f"✅ คุณได้โหวต/เปลี่ยนโหวตให้: **{selected_option}** แล้ว", ephemeral=True)
+
+
+    # Create button items in __init__ instead of using decorators
+    # and attach _button_callback to them. This allows dynamic button creation.
+
+
+@tree.command(name="poll", description="สร้างโพลล์ด้วยตัวเลือก")
+@app_commands.describe(question="คำถามสำหรับโพลล์")
+@app_commands.describe(options="ตัวเลือกสำหรับโพลล์ (คั่นด้วยจุลภาค เช่น ตัวเลือก A, ตัวเลือก B)")
+async def create_poll(interaction: discord.Interaction, question: str, options: str):
+    # Split options by comma and clean up whitespace
+    option_list = [opt.strip() for opt in options.split(',') if opt.strip()]
+
+    if not option_list:
+        await interaction.response.send_message("❌ โปรดระบุตัวเลือกอย่างน้อยหนึ่งตัวเลือกสำหรับโพลล์", ephemeral=True)
+        return
+    
+    if len(option_list) > 25: # Discord limits to 5 rows of 5 buttons (total 25)
+        await interaction.response.send_message("❌ รองรับสูงสุด 25 ตัวเลือกสำหรับโพลล์เท่านั้น", ephemeral=True)
+        return
+
+    embed = discord.Embed(
+        title=f"📊 โพลล์: {question}",
+        description="คลิกปุ่มด้านล่างเพื่อโหวต!",
+        color=discord.Color.blue()
+    )
+    embed.set_footer(text=f"โพลล์สร้างโดย: {interaction.user.display_name}")
+
+    initial_results_text = ""
+    for option in option_list:
+        initial_results_text += f"**{option}**: 0 โหวต\n"
+    embed.add_field(name="ผลโหวตเบื้องต้น", value=initial_results_text, inline=False)
+
+
+    # Defer the response before sending the message with view
+    await interaction.response.defer(ephemeral=False)
+
+    # Send the message with the view
+    message = await interaction.followup.send(embed=embed)
+    
+    # After sending, assign message.id to poll_id and create the view
+    # The view needs the message ID to correctly manage the poll.
+    poll_view = PollView(message.id, question, option_list)
+
+    # Add buttons to the view dynamically
+    for i, option_text in enumerate(option_list):
+        button = discord.ui.Button(label=option_text, custom_id=f"poll_{message.id}_{i}", style=discord.ButtonStyle.primary)
+        # Manually assign the callback to the button
+        button.callback = poll_view._button_callback # Assign the specific callback method
+        poll_view.add_item(button)
+    
+    # Add the "Show Results" button manually after option buttons
+    show_results_button_item = discord.ui.Button(label="แสดงผลลัพธ์", style=discord.ButtonStyle.secondary, custom_id=f"poll_show_results_{message.id}")
+    show_results_button_item.callback = poll_view.show_results_button # Assign its specific callback
+    poll_view.add_item(show_results_button_item)
+
+    # Store poll data (this needs to happen BEFORE view creation, as view initializer accesses it)
+    active_polls[message.id] = {
+        "question": question,
+        "options": option_list,
+        "votes": {option: set() for option in option_list}
+    }
+    
+    await message.edit(view=poll_view) # Edit the message to attach the view (buttons)
+    logging.info(f"Poll created by {interaction.user.display_name}: ID {message.id}, Question: {question}, Options: {options}")
+
 
 @tree.command(name="pause", description="Pause Spotify playback")
 async def pause_spotify(interaction: discord.Interaction):
