@@ -14,8 +14,8 @@ import httpx
 import asyncio
 import yt_dlp # Import yt-dlp for YouTube playback
 
-# Suppress yt_dlp console output
-yt_dlp.utils.bug_reports_message = lambda: ''
+# Suppress yt_dlp console output - REMOVED/COMMENTED OUT THIS LINE TO FIX THE TypeError
+# yt_dlp.utils.bug_reports_message = lambda: ''
 
 # --- Load environment variables ---
 load_dotenv()
@@ -196,6 +196,7 @@ async def _play_next_in_queue(channel: discord.VoiceChannel):
             # Use asyncio.to_thread for blocking yt_dlp operations
             # This ensures the Discord bot's event loop isn't blocked
             loop = asyncio.get_event_loop()
+            # The lambda function should just return the result of extract_info
             info = await loop.run_in_executor(None, lambda: yt_dlp.YoutubeDL(ydl_opts).extract_info(url, download=False))
             
             # If the query was a search term or a playlist, info might contain 'entries'
