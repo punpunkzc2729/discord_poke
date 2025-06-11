@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 from flask import Flask, render_template, request, redirect, url_for, session, flash
-from gtts import gTTS # Still imported for fallback or if needed elsewhere, but not used in speak
+from gtts import gTTS # gTTS is used for text-to-speech
 import os
 import threading
 import logging
@@ -14,7 +14,6 @@ import httpx
 import asyncio
 import yt_dlp # Import yt-dlp for YouTube playback
 import random # Import random for name randomization
-import boto3 # Import boto3 for Amazon Polly
 
 # Suppress yt_dlp console output - REMOVED/COMMENTED OUT THIS LINE TO FIX THE TypeError
 # yt_dlp.utils.bug_reports_message = lambda: ''
@@ -35,11 +34,6 @@ DISCORD_CLIENT_ID = os.getenv("DISCORD_CLIENT_ID")
 DISCORD_CLIENT_SECRET = os.getenv("DISCORD_CLIENT_SECRET")
 DISCORD_REDIRECT_URI = os.getenv("DISCORD_REDIRECT_URI")
 DISCORD_OAUTH_SCOPES = "identify guilds"
-
-# --- AWS Polly Credentials ---
-AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
-AWS_REGION_NAME = os.getenv("AWS_REGION_NAME") # e.g., 'us-east-1', 'ap-southeast-1'
 
 # --- Global Variables ---
 # Key: Discord User ID, Value: Spotify client
@@ -678,56 +672,28 @@ async def skip_spotify(interaction: discord.Interaction):
 
 @tree.command(name="speak", description="Make bot speak in voice channel / ให้บอทพูดในช่องเสียง")
 @app_commands.describe(message="Message to speak / ข้อความที่จะให้บอทพูด")
-@app_commands.describe(lang="Voice (e.g., 'Matthew', 'Amy', 'Thai Voice ID - see Polly docs') / เสียง (เช่น 'Matthew', 'Amy', 'รหัสเสียงไทย - ดูในเอกสาร Polly')")
-async def speak(interaction: discord.Interaction, message: str, lang: str = 'Matthew'): # lang is now voice ID
+@app_commands.describe(lang="Language (e.g., 'en', 'th') / ภาษา (เช่น 'en', 'th')")
+async def speak(interaction: discord.Interaction, message: str, lang: str = 'en'):
     global voice_client
     if not voice_client or not voice_client.is_connected():
         await interaction.response.send_message("❌ Bot not in voice channel. Use /join first / บอทยังไม่ได้เข้าช่องเสียง ใช้ /join ก่อน", ephemeral=True)
         return
     
-    if not AWS_ACCESS_KEY_ID or not AWS_SECRET_ACCESS_KEY or not AWS_REGION_NAME:
-        await interaction.response.send_message("❌ AWS Polly credentials are not configured. Please set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_REGION_NAME in your .env file.", ephemeral=True)
-        logging.error("AWS Polly credentials missing for speak command.")
-        return
-
     await interaction.response.defer() # Defer the response as TTS generation can take time
     try:
-        # Initialize Polly client
-        polly_client = boto3.client(
-            'polly',
-            aws_access_key_id=AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-            region_name=AWS_REGION_NAME
-        )
+        # Generate unique filename for TTS audio
+        tts_filename = f"tts_discord_{interaction.id}.mp3"
+        await asyncio.to_thread(gTTS(message, lang=lang).save, tts_filename) # Use asyncio.to_thread for blocking TTS operation
         
-        # Use asyncio.to_thread for blocking Polly call
-        response = await asyncio.to_thread(
-            polly_client.synthesize_speech,
-            Text=message,
-            OutputFormat='mp3',
-            VoiceId=lang # 'lang' is now used as VoiceId
-        )
-
-        # Generate unique filename for Polly audio
-        polly_filename = f"polly_discord_{interaction.id}.mp3"
+        # Play the generated audio file
+        source = discord.FFmpegPCMAudio(tts_filename, executable="ffmpeg")
+        voice_client.play(source, after=lambda e: asyncio.create_task(cleanup_audio(e, tts_filename))) # Cleanup after playback
         
-        # Save the audio stream to a file
-        if "AudioStream" in response:
-            with open(polly_filename, 'wb') as file:
-                file.write(response['AudioStream'].read())
-            
-            # Play the generated audio file
-            source = discord.FFmpegPCMAudio(polly_filename, executable="ffmpeg")
-            voice_client.play(source, after=lambda e: asyncio.create_task(cleanup_audio(e, polly_filename))) # Cleanup after playback
-            
-            await interaction.followup.send(f"🗣️ Speaking (Polly Voice: {lang}): **{message}**")
-        else:
-            await interaction.followup.send("❌ Error: Could not get audio stream from Amazon Polly.")
-            logging.error("No AudioStream received from Amazon Polly.")
+        await interaction.followup.send(f"🗣️ Speaking: **{message}** (Lang: {lang})")
 
     except Exception as e:
-        await interaction.followup.send(f"❌ Error speaking with Polly: {e}")
-        logging.error(f"Amazon Polly TTS error: {e}", exc_info=True)
+        await interaction.followup.send(f"❌ Error speaking: {e}")
+        logging.error(f"TTS error: {e}", exc_info=True)
 
 async def cleanup_audio(error, filename):
     """Clean up TTS audio file after playback"""
