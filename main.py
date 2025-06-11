@@ -13,6 +13,7 @@ from spotipy.oauth2 import SpotifyOAuth
 import httpx
 import asyncio
 import yt_dlp # Import yt-dlp for YouTube playback
+import random # Import random for name randomization
 
 # Suppress yt_dlp console output - REMOVED/COMMENTED OUT THIS LINE TO FIX THE TypeError
 # yt_dlp.utils.bug_reports_message = lambda: ''
@@ -406,6 +407,24 @@ async def play(interaction: discord.Interaction, query: str):
         await interaction.followup.send(f"❌ An unexpected error occurred: {e}")
         logging.error(f"An unexpected error in play command: {e}", exc_info=True)
 
+@tree.command(name="random_name", description="สุ่มเลือกชื่อจากรายการที่ให้มา")
+@app_commands.describe(names="ชื่อหรือรายการที่คั่นด้วยเครื่องหมายจุลภาค (เช่น John, Doe, Alice)")
+async def random_name(interaction: discord.Interaction, names: str):
+    try:
+        # Split the input string by comma, strip whitespace, and filter out empty strings
+        name_list = [name.strip() for name in names.split(',') if name.strip()]
+        
+        if not name_list:
+            await interaction.response.send_message("❌ โปรดระบุชื่ออย่างน้อยหนึ่งชื่อที่คั่นด้วยจุลภาค", ephemeral=True)
+            return
+
+        selected_name = random.choice(name_list)
+        await interaction.response.send_message(f"✨ ชื่อที่ถูกสุ่มเลือกคือ: **{selected_name}**")
+        logging.info(f"{interaction.user.display_name} randomized names: '{names}' and got '{selected_name}'")
+
+    except Exception as e:
+        logging.error(f"Error in random_name command: {e}", exc_info=True)
+        await interaction.response.send_message(f"❌ เกิดข้อผิดพลาดในการสุ่มชื่อ: {e}", ephemeral=True)
 
 @tree.command(name="pause", description="Pause Spotify playback")
 async def pause_spotify(interaction: discord.Interaction):
