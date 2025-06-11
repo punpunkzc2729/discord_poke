@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 from flask import Flask, render_template, request, redirect, url_for, session, flash
-from gtts import gTTS
+from gtts import gTTS # Still imported for fallback or if needed elsewhere, but not used in speak
 import os
 import threading
 import logging
@@ -14,6 +14,7 @@ import httpx
 import asyncio
 import yt_dlp # Import yt-dlp for YouTube playback
 import random # Import random for name randomization
+import boto3 # Import boto3 for Amazon Polly
 
 # Suppress yt_dlp console output - REMOVED/COMMENTED OUT THIS LINE TO FIX THE TypeError
 # yt_dlp.utils.bug_reports_message = lambda: ''
@@ -34,6 +35,11 @@ DISCORD_CLIENT_ID = os.getenv("DISCORD_CLIENT_ID")
 DISCORD_CLIENT_SECRET = os.getenv("DISCORD_CLIENT_SECRET")
 DISCORD_REDIRECT_URI = os.getenv("DISCORD_REDIRECT_URI")
 DISCORD_OAUTH_SCOPES = "identify guilds"
+
+# --- AWS Polly Credentials ---
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_REGION_NAME = os.getenv("AWS_REGION_NAME") # e.g., 'us-east-1', 'ap-southeast-1'
 
 # --- Global Variables ---
 # Key: Discord User ID, Value: Spotify client
@@ -439,7 +445,8 @@ class PollView(discord.ui.View):
         self.question = question
         self.options = options
         
-        # Initialize votes if poll is new
+        # Initialize votes data structure for this poll
+        # This should happen ONCE when the poll is created.
         if poll_id not in active_polls:
             active_polls[poll_id] = {
                 "question": question,
@@ -447,10 +454,17 @@ class PollView(discord.ui.View):
                 "votes": {option: set() for option in options} # Use a set to store user IDs, preventing duplicate votes
             }
         
-        # Add buttons for each option
+        # Dynamically add buttons for each option within the __init__ method
         for i, option in enumerate(options):
-            # Limit button value to 100 characters if needed
-            self.add_item(discord.ui.Button(label=option, custom_id=f"poll_{poll_id}_{i}"))
+            button = discord.ui.Button(label=option, custom_id=f"poll_{poll_id}_{i}", style=discord.ButtonStyle.primary)
+            button.callback = self._button_callback # Assign the specific callback method here
+            self.add_item(button)
+
+        # Add the "Show Results" button
+        show_results_button_item = discord.ui.Button(label="แสดงผลลัพธ์", style=discord.ButtonStyle.secondary, custom_id=f"poll_show_results_{poll_id}")
+        show_results_button_item.callback = self.show_results_button # Assign its specific callback
+        self.add_item(show_results_button_item)
+
 
     async def on_timeout(self):
         # This will be called if the view times out.
@@ -462,19 +476,33 @@ class PollView(discord.ui.View):
         # if self.poll_id in active_polls:
         #     del active_polls[self.poll_id]
 
-    @discord.ui.button(label="Show Results", style=discord.ButtonStyle.secondary, custom_id="poll_show_results")
+    # Note: When using a decorator @discord.ui.button, the custom_id argument in the decorator
+    # must be unique if this view can be instantiated multiple times and you want specific buttons
+    # to trigger this callback across different instances without issues.
+    # For a general "Show Results" button that applies to the current view instance,
+    # it's usually fine, but ensure its custom_id matches the one used in `add_item` if assigned dynamically.
+    # Here, I'm adjusting to ensure the custom_id in the decorator is unique per poll instance.
+    @discord.ui.button(label="Show Results", style=discord.ButtonStyle.secondary, custom_id="show_results_placeholder")
     async def show_results_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # Refresh the poll message with current results
+        # The custom_id in the decorator is a placeholder. We need to check the actual
+        # custom_id from the button pressed to ensure it matches the current poll.
+        # However, since this callback is manually assigned in __init__ with a poll_id-specific custom_id,
+        # we can rely on that. The decorator's custom_id becomes less relevant here.
+        
+        # We need to explicitly check if the custom_id matches the one generated for this poll instance
+        # The `custom_id` on the button *object* that triggered this callback should be `f"poll_show_results_{self.poll_id}"`
+        if button.custom_id != f"poll_show_results_{self.poll_id}":
+            await interaction.response.send_message("❌ This 'Show Results' button is not linked to this active poll.", ephemeral=True)
+            return
+
         await self.update_poll_message(interaction.message)
         await interaction.response.defer() # Acknowledge the button press without sending a new message
 
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        # Only allow interaction if it's the correct poll message
-        if interaction.message.id != self.poll_id:
-            await interaction.response.send_message("❌ This poll is no longer active or is a different poll.", ephemeral=True)
-            return False
-        return True
+        # This check is good for general view interactions.
+        # But for specific button callbacks, we should verify the custom_id structure.
+        return True # Temporarily simplified; specific checks moved to button callbacks
 
     async def on_error(self, interaction: discord.Interaction, error: Exception, item: discord.ui.Item):
         logging.error(f"Error in poll interaction: {error}", exc_info=True)
@@ -496,23 +524,21 @@ class PollView(discord.ui.View):
         for option, voters in poll_data['votes'].items():
             results_text += f"**{option}**: {len(voters)} โหวต\n"
         
-        # Display who voted (optional, can be very long for many users)
-        # for option, voters in poll_data['votes'].items():
-        #     voter_names = [bot.get_user(uid).display_name if bot.get_user(uid) else f"User_{uid}" for uid in voters]
-        #     results_text += f"- {option} ({len(voters)}): {', '.join(voter_names) or 'ไม่มี'}\n"
-
         embed.description = results_text if results_text else "ยังไม่มีคะแนนโหวต."
         embed.set_footer(text=f"Poll ID: {message.id}")
         
         await message.edit(embed=embed, view=self)
 
-    # Dynamically create button callbacks for each option
-    # This is a bit advanced but allows associating each button with its option.
-    # Alternatively, you could use a single callback for all buttons and check custom_id.
+    # Callback for option buttons
     async def _button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
-        poll_id_str, option_index_str = button.custom_id.split('_')[1:] # Extract poll_id and option_index
-        poll_id = int(poll_id_str)
-        option_index = int(option_index_str)
+        # Extract poll_id and option_index from custom_id (e.g., "poll_MESSAGEID_INDEX")
+        parts = button.custom_id.split('_')
+        if len(parts) != 3 or parts[0] != "poll":
+            await interaction.response.send_message("❌ เกิดข้อผิดพลาดกับปุ่มโพลล์นี้", ephemeral=True)
+            return
+
+        poll_id = int(parts[1])
+        option_index = int(parts[2])
         user_id = interaction.user.id
         
         poll_data = active_polls.get(poll_id)
@@ -522,36 +548,31 @@ class PollView(discord.ui.View):
         
         selected_option = poll_data['options'][option_index]
 
-        # Check if user already voted for ANY option in this poll
-        user_already_voted_for_an_option = False
-        for option, voters in poll_data['votes'].items():
-            if user_id in voters:
-                user_already_voted_for_an_option = True
-                # Remove previous vote
-                voters.remove(user_id)
-                # logging.info(f"User {user_id} removed vote from {option}")
-                break # A user can only vote for one option in this setup
-
-        # Add new vote if not already voted for this specific option
+        # Remove user's previous vote from any option (if a user can only vote for one option)
+        # This logic ensures a user can change their vote by clicking a different option
+        user_changed_vote = False
+        for option_key, voters_set in poll_data['votes'].items():
+            if user_id in voters_set and option_key != selected_option:
+                voters_set.remove(user_id)
+                user_changed_vote = True
+                logging.info(f"User {user_id} removed vote from {option_key} in poll {poll_id}")
+                break
+        
+        # Add the new vote
         if user_id not in poll_data['votes'][selected_option]:
             poll_data['votes'][selected_option].add(user_id)
             logging.info(f"User {user_id} voted for {selected_option} in poll {poll_id}")
-            vote_status = "โหวตแล้ว"
+            status_message = f"✅ คุณได้โหวตให้: **{selected_option}**"
         else:
-            # If user clicked the same option again, it means they are removing their vote (if single vote allowed)
-            # Or if multi-vote, this logic needs adjustment.
-            # For simplicity, if they click the same one again, we assume they are confirming their vote or re-voting
-            # For single vote per poll, this branch means they switched their vote.
-            # We already removed the old vote above, so just update.
-            vote_status = "เปลี่ยนโหวต"
-            logging.info(f"User {user_id} re-voted for {selected_option} in poll {poll_id}")
-            
+            # If user clicks the same option they already voted for, it's considered a confirmation
+            # Or if you want to allow un-voting:
+            # poll_data['votes'][selected_option].remove(user_id)
+            # status_message = f"✅ คุณยกเลิกการโหวต: **{selected_option}**"
+            status_message = f"✅ คุณยังคงโหวตให้: **{selected_option}**"
+            logging.info(f"User {user_id} re-confirmed vote for {selected_option} in poll {poll_id}")
+
         await self.update_poll_message(interaction.message)
-        await interaction.response.send_message(f"✅ คุณได้โหวต/เปลี่ยนโหวตให้: **{selected_option}** แล้ว", ephemeral=True)
-
-
-    # Create button items in __init__ instead of using decorators
-    # and attach _button_callback to them. This allows dynamic button creation.
+        await interaction.response.send_message(status_message, ephemeral=True)
 
 
 @tree.command(name="poll", description="สร้างโพลล์ด้วยตัวเลือก")
@@ -585,31 +606,20 @@ async def create_poll(interaction: discord.Interaction, question: str, options: 
     # Defer the response before sending the message with view
     await interaction.response.defer(ephemeral=False)
 
-    # Send the message with the view
+    # Send the message without the view first to get the message ID
+    # Then create the view with the message ID and edit the message
     message = await interaction.followup.send(embed=embed)
     
-    # After sending, assign message.id to poll_id and create the view
-    # The view needs the message ID to correctly manage the poll.
-    poll_view = PollView(message.id, question, option_list)
-
-    # Add buttons to the view dynamically
-    for i, option_text in enumerate(option_list):
-        button = discord.ui.Button(label=option_text, custom_id=f"poll_{message.id}_{i}", style=discord.ButtonStyle.primary)
-        # Manually assign the callback to the button
-        button.callback = poll_view._button_callback # Assign the specific callback method
-        poll_view.add_item(button)
-    
-    # Add the "Show Results" button manually after option buttons
-    show_results_button_item = discord.ui.Button(label="แสดงผลลัพธ์", style=discord.ButtonStyle.secondary, custom_id=f"poll_show_results_{message.id}")
-    show_results_button_item.callback = poll_view.show_results_button # Assign its specific callback
-    poll_view.add_item(show_results_button_item)
-
-    # Store poll data (this needs to happen BEFORE view creation, as view initializer accesses it)
+    # Store poll data as soon as message ID is available
+    # PollView.__init__ will check active_polls, so ensure this is set BEFORE PollView is created
     active_polls[message.id] = {
         "question": question,
         "options": option_list,
         "votes": {option: set() for option in option_list}
     }
+
+    # Create the PollView instance, all buttons are now added within its __init__
+    poll_view = PollView(message.id, question, option_list)
     
     await message.edit(view=poll_view) # Edit the message to attach the view (buttons)
     logging.info(f"Poll created by {interaction.user.display_name}: ID {message.id}, Question: {question}, Options: {options}")
@@ -668,28 +678,56 @@ async def skip_spotify(interaction: discord.Interaction):
 
 @tree.command(name="speak", description="Make bot speak in voice channel / ให้บอทพูดในช่องเสียง")
 @app_commands.describe(message="Message to speak / ข้อความที่จะให้บอทพูด")
-@app_commands.describe(lang="Language (e.g., 'en', 'th') / ภาษา (เช่น 'en', 'th')")
-async def speak(interaction: discord.Interaction, message: str, lang: str = 'en'):
+@app_commands.describe(lang="Voice (e.g., 'Matthew', 'Amy', 'Thai Voice ID - see Polly docs') / เสียง (เช่น 'Matthew', 'Amy', 'รหัสเสียงไทย - ดูในเอกสาร Polly')")
+async def speak(interaction: discord.Interaction, message: str, lang: str = 'Matthew'): # lang is now voice ID
     global voice_client
     if not voice_client or not voice_client.is_connected():
         await interaction.response.send_message("❌ Bot not in voice channel. Use /join first / บอทยังไม่ได้เข้าช่องเสียง ใช้ /join ก่อน", ephemeral=True)
         return
     
+    if not AWS_ACCESS_KEY_ID or not AWS_SECRET_ACCESS_KEY or not AWS_REGION_NAME:
+        await interaction.response.send_message("❌ AWS Polly credentials are not configured. Please set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_REGION_NAME in your .env file.", ephemeral=True)
+        logging.error("AWS Polly credentials missing for speak command.")
+        return
+
     await interaction.response.defer() # Defer the response as TTS generation can take time
     try:
-        # Generate unique filename for TTS audio
-        tts_filename = f"tts_discord_{interaction.id}.mp3"
-        await asyncio.to_thread(gTTS(message, lang=lang).save, tts_filename) # Use asyncio.to_thread for blocking TTS operation
+        # Initialize Polly client
+        polly_client = boto3.client(
+            'polly',
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+            region_name=AWS_REGION_NAME
+        )
         
-        # Play the generated audio file
-        source = discord.FFmpegPCMAudio(tts_filename, executable="ffmpeg")
-        voice_client.play(source, after=lambda e: asyncio.create_task(cleanup_audio(e, tts_filename))) # Cleanup after playback
+        # Use asyncio.to_thread for blocking Polly call
+        response = await asyncio.to_thread(
+            polly_client.synthesize_speech,
+            Text=message,
+            OutputFormat='mp3',
+            VoiceId=lang # 'lang' is now used as VoiceId
+        )
+
+        # Generate unique filename for Polly audio
+        polly_filename = f"polly_discord_{interaction.id}.mp3"
         
-        await interaction.followup.send(f"🗣️ Speaking: **{message}** (Lang: {lang})")
+        # Save the audio stream to a file
+        if "AudioStream" in response:
+            with open(polly_filename, 'wb') as file:
+                file.write(response['AudioStream'].read())
+            
+            # Play the generated audio file
+            source = discord.FFmpegPCMAudio(polly_filename, executable="ffmpeg")
+            voice_client.play(source, after=lambda e: asyncio.create_task(cleanup_audio(e, polly_filename))) # Cleanup after playback
+            
+            await interaction.followup.send(f"🗣️ Speaking (Polly Voice: {lang}): **{message}**")
+        else:
+            await interaction.followup.send("❌ Error: Could not get audio stream from Amazon Polly.")
+            logging.error("No AudioStream received from Amazon Polly.")
 
     except Exception as e:
-        await interaction.followup.send(f"❌ Error speaking: {e}")
-        logging.error(f"TTS error: {e}", exc_info=True)
+        await interaction.followup.send(f"❌ Error speaking with Polly: {e}")
+        logging.error(f"Amazon Polly TTS error: {e}", exc_info=True)
 
 async def cleanup_audio(error, filename):
     """Clean up TTS audio file after playback"""

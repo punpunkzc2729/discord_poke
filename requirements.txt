@@ -8,3 +8,4 @@ PyNaCl
 gunicorn
 Werkzeug==2.3.8
 yt-dlp
+boto3
