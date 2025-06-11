@@ -7,3 +7,4 @@ httpx
 PyNaCl
 gunicorn
 Werkzeug==2.3.8
+yt_dlp
