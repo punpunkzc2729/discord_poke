@@ -1,0 +1,315 @@
+/* General body and container styling */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif; /* Ensuring Inter font is applied */
+}
+
+body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.player-container {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.player-container:hover {
+    transform: translateY(-5px);
+}
+
+/* Album Art */
+.album-art {
+    width: 250px;
+    height: 250px;
+    border-radius: 20px;
+    margin: 0 auto 30px;
+    overflow: hidden;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+    position: relative;
+    transition: transform 0.3s ease;
+}
+
+.album-art:hover {
+    transform: scale(1.05);
+}
+
+.album-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.album-art.playing img {
+    animation: rotate 20s linear infinite;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Song Info */
+.song-info {
+    margin-bottom: 30px;
+    color: white;
+}
+
+.song-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.artist-name {
+    font-size: 16px;
+    opacity: 0.8;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Progress Bar */
+.progress-container {
+    margin: 20px 0;
+    background: rgba(255, 255, 255, 0.2);
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #ff6b6b, #feca57);
+    border-radius: 3px;
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+/* Controls */
+.controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.control-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.control-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.control-btn:active {
+    transform: scale(0.95);
+}
+
+.play-pause-btn {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #ff6b6b, #feca57);
+}
+
+.play-pause-btn:hover {
+    background: linear-gradient(135deg, #ff5252, #ffca28);
+    box-shadow: 0 10px 25px rgba(255, 107, 107, 0.4);
+}
+
+.control-icon {
+    width: 24px;
+    height: 24px;
+    fill: white;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.play-pause-btn .control-icon {
+    width: 32px;
+    height: 32px;
+}
+
+/* Volume Control */
+.volume-container {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.volume-slider {
+    width: 100px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: white;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.volume-icon {
+    width: 20px;
+    height: 20px;
+    fill: rgba(255, 255, 255, 0.8);
+}
+
+/* Authentication Section */
+.auth-container {
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+}
+
+.auth-btn, .web-control-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 12px 24px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 200px;
+    justify-content: center;
+    text-decoration: none; /* For <a> tags acting as buttons */
+}
+
+.auth-btn:hover, .web-control-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.discord-btn {
+    background: linear-gradient(135deg, #5865f2, #7289da);
+    border: 1px solid rgba(88, 101, 242, 0.3);
+}
+
+.discord-btn:hover {
+    background: linear-gradient(135deg, #4752c4, #5b6ecd);
+    box-shadow: 0 8px 25px rgba(88, 101, 242, 0.4);
+}
+
+.spotify-btn {
+    background: linear-gradient(135deg, #1db954, #1ed760);
+    border: 1px solid rgba(29, 185, 84, 0.3);
+}
+
+.spotify-btn:hover {
+    background: linear-gradient(135deg, #1aa34a, #1bc653);
+    box-shadow: 0 8px 25px rgba(29, 185, 84, 0.4);
+}
+
+.auth-icon {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #1db954;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .player-container {
+        padding: 30px 20px;
+    }
+    .album-art {
+        width: 200px;
+        height: 200px;
+    }
+    .song-title {
+        font-size: 20px;
+    }
+    .auth-btn, .web-control-btn {
+        width: 180px;
+        padding: 10px 20px;
+        font-size: 13px;
+    }
+    .web-control-btn {
+        width: 100%; /* Full width for smaller buttons on mobile */
+    }
+    .controls {
+        gap: 10px;
+    }
+    .control-btn {
+        width: 50px;
+        height: 50px;
+    }
+    .play-pause-btn {
+        width: 70px;
+        height: 70px;
+    }
+    .control-icon {
+        width: 20px;
+        height: 20px;
+    }
+    .play-pause-btn .control-icon {
+        width: 28px;
+        height: 28px;
+    }
+}

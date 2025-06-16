@@ -1,0 +1,12 @@
+discord.py
+Flask
+gTTS
+python-dotenv
+spotipy
+httpx
+PyNaCl
+gunicorn
+Werkzeug==2.3.8
+yt-dlp
+boto3
+firebase-admin==6.2.0 # เพิ่มบรรทัดนี้

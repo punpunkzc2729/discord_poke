@@ -1,0 +1,425 @@
+2025-06-03 12:45:22,357:INFO:logging in using static token
+2025-06-03 12:45:22,361:INFO:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.0.0.133:5000
+2025-06-03 12:45:22,362:INFO:[33mPress CTRL+C to quit[0m
+2025-06-03 12:45:23,741:INFO:Shard ID None has connected to Gateway (Session ID: b7bd8f621b9b1d646029d7448a528058).
+2025-06-03 12:45:26,400:INFO:Bot is ready.
+2025-06-03 12:45:33,339:INFO:127.0.0.1 - - [03/Jun/2025 12:45:33] "GET / HTTP/1.1" 200 -
+2025-06-03 12:45:38,658:INFO:Added to queue from web: https://www.youtube.com/watch?v=DsbDfqXCEaU
+2025-06-03 12:45:38,658:INFO:127.0.0.1 - - [03/Jun/2025 12:45:38] "[32mPOST /add HTTP/1.1[0m" 302 -
+2025-06-03 12:45:38,787:INFO:127.0.0.1 - - [03/Jun/2025 12:45:38] "GET / HTTP/1.1" 200 -
+2025-06-03 12:45:45,149:INFO:Connecting to voice...
+2025-06-03 12:45:45,149:INFO:Starting voice handshake... (connection attempt 1)
+2025-06-03 12:45:46,277:INFO:Voice handshake complete. Endpoint found: singapore11130.discord.media
+2025-06-03 12:45:46,343:INFO:Voice connection complete.
+2025-06-03 12:45:46,767:INFO:Joined voice channel: ล็อบบี้
+2025-06-03 12:45:50,896:INFO:Triggered play via web.
+2025-06-03 12:45:50,897:INFO:127.0.0.1 - - [03/Jun/2025 12:45:50] "[32mGET /play HTTP/1.1[0m" 302 -
+2025-06-03 12:45:51,051:INFO:127.0.0.1 - - [03/Jun/2025 12:45:51] "GET / HTTP/1.1" 200 -
+2025-06-03 12:46:04,706:INFO:TTS message: ควย
+2025-06-03 12:46:05,401:INFO:ffmpeg process 18812 successfully terminated with return code of 0.
+2025-06-03 12:51:23,304:INFO:Added to queue: https://www.youtube.com/watch?v=tbQ2s9jfvnE
+2025-06-03 12:51:24,853:ERROR:Ignoring exception in command 'play'
+Traceback (most recent call last):
+  File "/usr/local/python/3.12.1/lib/python3.12/site-packages/yt_dlp/YoutubeDL.py", line 1662, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/python/3.12.1/lib/python3.12/site-packages/yt_dlp/YoutubeDL.py", line 1797, in __extract_info
+    ie_result = ie.extract(url)
+                ^^^^^^^^^^^^^^^
+  File "/usr/local/python/3.12.1/lib/python3.12/site-packages/yt_dlp/extractor/common.py", line 748, in extract
+    ie_result = self._real_extract(url)
+                ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/python/3.12.1/lib/python3.12/site-packages/yt_dlp/extractor/youtube/_video.py", line 3821, in _real_extract
+    self.raise_no_formats(reason, expected=True)
+  File "/usr/local/python/3.12.1/lib/python3.12/site-packages/yt_dlp/extractor/common.py", line 1269, in raise_no_formats
+    raise ExtractorError(msg, expected=expected, video_id=video_id)
+yt_dlp.utils.ExtractorError: [youtube] DsbDfqXCEaU: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/python/3.12.1/lib/python3.12/site-packages/discord/app_commands/commands.py", line 858, in _do_call
+    return await self._callback(interaction, **params)  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/discord_poke/mybot.py", line 62, in play
+    await play_next(interaction.channel)
+  File "/workspaces/discord_poke/mybot.py", line 76, in play_next
+    info = ydl.extract_info(url, download=False)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/python/3.12.1/lib/python3.12/site-packages/yt_dlp/YoutubeDL.py", line 1651, in extract_info
+    return self.__extract_info(url, self.get_info_extractor(key), download, extra_info, process)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/python/3.12.1/lib/python3.12/site-packages/yt_dlp/YoutubeDL.py", line 1680, in wrapper
+    self.report_error(str(e), e.format_traceback())
+  File "/usr/local/python/3.12.1/lib/python3.12/site-packages/yt_dlp/YoutubeDL.py", line 1120, in report_error
+    self.trouble(f'{self._format_err("ERROR:", self.Styles.ERROR)} {message}', *args, **kwargs)
+  File "/usr/local/python/3.12.1/lib/python3.12/site-packages/yt_dlp/YoutubeDL.py", line 1059, in trouble
+    raise DownloadError(message, exc_info)
+yt_dlp.utils.DownloadError: [0;31mERROR:[0m [youtube] DsbDfqXCEaU: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/python/3.12.1/lib/python3.12/site-packages/discord/app_commands/tree.py", line 1310, in _call
+    await command._invoke_with_namespace(interaction, namespace)
+  File "/usr/local/python/3.12.1/lib/python3.12/site-packages/discord/app_commands/commands.py", line 883, in _invoke_with_namespace
+    return await self._do_call(interaction, transformed_values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/python/3.12.1/lib/python3.12/site-packages/discord/app_commands/commands.py", line 876, in _do_call
+    raise CommandInvokeError(self, e) from e
+discord.app_commands.errors.CommandInvokeError: Command 'play' raised an exception: DownloadError: [0;31mERROR:[0m [youtube] DsbDfqXCEaU: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+2025-06-03 13:01:22,704:INFO:logging in using static token
+2025-06-03 13:01:22,708:INFO:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.0.0.133:5000
+2025-06-03 13:01:22,708:INFO:[33mPress CTRL+C to quit[0m
+2025-06-03 13:01:23,962:INFO:Shard ID None has connected to Gateway (Session ID: 1da939e0544092e218ffbc5fa3b51a7b).
+2025-06-03 13:01:26,406:INFO:Bot is ready.
+2025-06-03 13:01:37,016:INFO:Connecting to voice...
+2025-06-03 13:01:37,017:INFO:Starting voice handshake... (connection attempt 1)
+2025-06-03 13:01:37,480:INFO:Voice handshake complete. Endpoint found: singapore11130.discord.media
+2025-06-03 13:01:37,528:INFO:Voice connection complete.
+2025-06-03 13:01:37,903:INFO:Joined voice channel: ล็อบบี้
+2025-06-03 13:01:59,693:INFO:TTS message: ทดสอบระ
+2025-06-03 13:02:00,784:INFO:ffmpeg process 25948 successfully terminated with return code of 0.
+2025-06-03 13:02:10,495:INFO:Added to queue: https://www.youtube.com/watch?v=tbQ2s9jfvnE
+2025-06-03 13:02:14,815:INFO:Now playing: วัดปะล่ะ + ช่วยไม่ได้ 【 Cover Live From Home 】
+2025-06-03 13:02:19,982:INFO:127.0.0.1 - - [03/Jun/2025 13:02:19] "GET / HTTP/1.1" 200 -
+2025-06-03 13:02:23,985:INFO:Added to queue from web: https://www.youtube.com/watch?v=DsbDfqXCEaU
+2025-06-03 13:02:23,986:INFO:127.0.0.1 - - [03/Jun/2025 13:02:23] "[32mPOST /add HTTP/1.1[0m" 302 -
+2025-06-03 13:02:24,111:INFO:127.0.0.1 - - [03/Jun/2025 13:02:24] "GET / HTTP/1.1" 200 -
+2025-06-03 13:02:26,223:INFO:Paused via web.
+2025-06-03 13:02:26,223:INFO:127.0.0.1 - - [03/Jun/2025 13:02:26] "[32mGET /pause HTTP/1.1[0m" 302 -
+2025-06-03 13:02:26,350:INFO:127.0.0.1 - - [03/Jun/2025 13:02:26] "GET / HTTP/1.1" 200 -
+2025-06-03 13:02:28,306:INFO:Resumed via web.
+2025-06-03 13:02:28,306:INFO:127.0.0.1 - - [03/Jun/2025 13:02:28] "[32mGET /resume HTTP/1.1[0m" 302 -
+2025-06-03 13:02:28,442:INFO:127.0.0.1 - - [03/Jun/2025 13:02:28] "GET / HTTP/1.1" 200 -
+2025-06-03 13:02:30,650:INFO:Skipped via web.
+2025-06-03 13:02:30,651:INFO:127.0.0.1 - - [03/Jun/2025 13:02:30] "[32mGET /skip HTTP/1.1[0m" 302 -
+2025-06-03 13:02:30,666:INFO:ffmpeg process 26093 has not terminated. Waiting to terminate...
+2025-06-03 13:02:30,670:INFO:ffmpeg process 26093 should have terminated with a return code of -9.
+2025-06-03 13:02:30,776:INFO:127.0.0.1 - - [03/Jun/2025 13:02:30] "GET / HTTP/1.1" 200 -
+2025-06-03 13:02:35,230:INFO:Now playing: ลิ้นติดไฟ 👅🔥- TangBadVoice [Official Music Video]
+2025-06-03 13:02:41,196:INFO:Volume down: 0.4
+2025-06-03 13:02:41,196:INFO:127.0.0.1 - - [03/Jun/2025 13:02:41] "[32mGET /volume_down HTTP/1.1[0m" 302 -
+2025-06-03 13:02:41,247:INFO:127.0.0.1 - - [03/Jun/2025 13:02:41] "GET / HTTP/1.1" 200 -
+2025-06-03 13:02:42,304:INFO:Volume down: 0.30000000000000004
+2025-06-03 13:02:42,304:INFO:127.0.0.1 - - [03/Jun/2025 13:02:42] "[32mGET /volume_down HTTP/1.1[0m" 302 -
+2025-06-03 13:02:42,352:INFO:127.0.0.1 - - [03/Jun/2025 13:02:42] "GET / HTTP/1.1" 200 -
+2025-06-03 13:02:42,889:INFO:Volume down: 0.20000000000000004
+2025-06-03 13:02:42,890:INFO:127.0.0.1 - - [03/Jun/2025 13:02:42] "[32mGET /volume_down HTTP/1.1[0m" 302 -
+2025-06-03 13:02:42,946:INFO:127.0.0.1 - - [03/Jun/2025 13:02:42] "GET / HTTP/1.1" 200 -
+2025-06-03 13:02:43,213:INFO:Volume down: 0.10000000000000003
+2025-06-03 13:02:43,213:INFO:127.0.0.1 - - [03/Jun/2025 13:02:43] "[32mGET /volume_down HTTP/1.1[0m" 302 -
+2025-06-03 13:02:43,261:INFO:127.0.0.1 - - [03/Jun/2025 13:02:43] "GET / HTTP/1.1" 200 -
+2025-06-03 13:02:43,648:INFO:Volume down: 0.1
+2025-06-03 13:02:43,648:INFO:127.0.0.1 - - [03/Jun/2025 13:02:43] "[32mGET /volume_down HTTP/1.1[0m" 302 -
+2025-06-03 13:02:43,772:INFO:127.0.0.1 - - [03/Jun/2025 13:02:43] "GET / HTTP/1.1" 200 -
+2025-06-03 13:02:44,294:INFO:Volume down: 0.1
+2025-06-03 13:02:44,294:INFO:127.0.0.1 - - [03/Jun/2025 13:02:44] "[32mGET /volume_down HTTP/1.1[0m" 302 -
+2025-06-03 13:02:44,343:INFO:127.0.0.1 - - [03/Jun/2025 13:02:44] "GET / HTTP/1.1" 200 -
+2025-06-03 13:02:45,202:INFO:Volume down: 0.1
+2025-06-03 13:02:45,204:INFO:127.0.0.1 - - [03/Jun/2025 13:02:45] "[32mGET /volume_down HTTP/1.1[0m" 302 -
+2025-06-03 13:02:45,259:INFO:127.0.0.1 - - [03/Jun/2025 13:02:45] "GET / HTTP/1.1" 200 -
+2025-06-03 13:03:48,786:INFO:Paused via web.
+2025-06-03 13:03:48,786:INFO:127.0.0.1 - - [03/Jun/2025 13:03:48] "[32mGET /pause HTTP/1.1[0m" 302 -
+2025-06-03 13:03:48,833:INFO:127.0.0.1 - - [03/Jun/2025 13:03:48] "GET / HTTP/1.1" 200 -
+2025-06-03 13:03:50,429:INFO:Stopped via web and cleared queue.
+2025-06-03 13:03:50,430:INFO:127.0.0.1 - - [03/Jun/2025 13:03:50] "[32mGET /stop HTTP/1.1[0m" 302 -
+2025-06-03 13:03:50,560:INFO:127.0.0.1 - - [03/Jun/2025 13:03:50] "GET / HTTP/1.1" 200 -
+2025-06-03 13:15:55,234:INFO:logging in using static token
+2025-06-03 13:15:55,240:INFO:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.0.0.133:5000
+2025-06-03 13:15:55,242:INFO:[33mPress CTRL+C to quit[0m
+2025-06-03 13:15:56,503:INFO:Shard ID None has connected to Gateway (Session ID: 007b807dae86b88678b046af9f6ba73e).
+2025-06-03 13:15:58,529:INFO:Bot logged in as พี่มาแล้วน้อง#3371
+2025-06-03 13:15:58,986:INFO:127.0.0.1 - - [03/Jun/2025 13:15:58] "GET / HTTP/1.1" 200 -
+2025-06-03 13:15:59,089:INFO:Global commands synced.
+2025-06-03 13:15:59,406:INFO:Commands synced to guild: 894871922637172747
+2025-06-03 13:16:16,534:INFO:Connecting to voice...
+2025-06-03 13:16:16,534:INFO:Starting voice handshake... (connection attempt 1)
+2025-06-03 13:16:16,989:INFO:Voice handshake complete. Endpoint found: singapore11130.discord.media
+2025-06-03 13:16:17,038:INFO:Voice connection complete.
+2025-06-03 13:16:17,596:INFO:Joined voice channel: ล็อบบี้
+2025-06-03 13:16:26,338:INFO:punpunkzc woke up punpunkzc.
+2025-06-03 13:17:04,335:INFO:TTS message: หวัดดีเจ้าพวกมนุษ
+2025-06-03 13:17:06,435:INFO:ffmpeg process 32820 successfully terminated with return code of 0.
+2025-06-03 13:17:21,404:INFO:Added to queue: https://www.youtube.com/watch?v=tbQ2s9jfvnE
+2025-06-03 13:17:25,280:INFO:Now playing: วัดปะล่ะ + ช่วยไม่ได้ 【 Cover Live From Home 】
+2025-06-03 13:17:34,775:INFO:127.0.0.1 - - [03/Jun/2025 13:17:34] "GET / HTTP/1.1" 200 -
+2025-06-03 13:17:38,426:INFO:Paused via web.
+2025-06-03 13:17:38,427:INFO:127.0.0.1 - - [03/Jun/2025 13:17:38] "[32mGET /pause HTTP/1.1[0m" 302 -
+2025-06-03 13:17:38,557:INFO:127.0.0.1 - - [03/Jun/2025 13:17:38] "GET / HTTP/1.1" 200 -
+2025-06-03 13:17:39,567:INFO:Resumed via web.
+2025-06-03 13:17:39,567:INFO:127.0.0.1 - - [03/Jun/2025 13:17:39] "[32mGET /resume HTTP/1.1[0m" 302 -
+2025-06-03 13:17:39,616:INFO:127.0.0.1 - - [03/Jun/2025 13:17:39] "GET / HTTP/1.1" 200 -
+2025-06-03 13:17:41,383:INFO:Volume up: 0.6
+2025-06-03 13:17:41,383:INFO:127.0.0.1 - - [03/Jun/2025 13:17:41] "[32mGET /volume_up HTTP/1.1[0m" 302 -
+2025-06-03 13:17:41,508:INFO:127.0.0.1 - - [03/Jun/2025 13:17:41] "GET / HTTP/1.1" 200 -
+2025-06-03 13:17:42,277:INFO:Volume up: 0.7
+2025-06-03 13:17:42,277:INFO:127.0.0.1 - - [03/Jun/2025 13:17:42] "[32mGET /volume_up HTTP/1.1[0m" 302 -
+2025-06-03 13:17:42,414:INFO:Volume up: 0.7999999999999999
+2025-06-03 13:17:42,415:INFO:127.0.0.1 - - [03/Jun/2025 13:17:42] "[32mGET /volume_up HTTP/1.1[0m" 302 -
+2025-06-03 13:17:42,489:INFO:127.0.0.1 - - [03/Jun/2025 13:17:42] "GET / HTTP/1.1" 200 -
+2025-06-03 13:17:42,835:INFO:Volume up: 0.8999999999999999
+2025-06-03 13:17:42,836:INFO:127.0.0.1 - - [03/Jun/2025 13:17:42] "[32mGET /volume_up HTTP/1.1[0m" 302 -
+2025-06-03 13:17:42,902:INFO:Volume up: 0.9999999999999999
+2025-06-03 13:17:42,902:INFO:127.0.0.1 - - [03/Jun/2025 13:17:42] "[32mGET /volume_up HTTP/1.1[0m" 302 -
+2025-06-03 13:17:43,072:INFO:Volume up: 1.0999999999999999
+2025-06-03 13:17:43,072:INFO:127.0.0.1 - - [03/Jun/2025 13:17:43] "[32mGET /volume_up HTTP/1.1[0m" 302 -
+2025-06-03 13:17:43,123:INFO:127.0.0.1 - - [03/Jun/2025 13:17:43] "GET / HTTP/1.1" 200 -
+2025-06-03 13:17:43,419:INFO:Volume up: 1.2
+2025-06-03 13:17:43,420:INFO:127.0.0.1 - - [03/Jun/2025 13:17:43] "[32mGET /volume_up HTTP/1.1[0m" 302 -
+2025-06-03 13:17:43,467:INFO:127.0.0.1 - - [03/Jun/2025 13:17:43] "GET / HTTP/1.1" 200 -
+2025-06-03 13:17:43,855:INFO:Volume up: 1.3
+2025-06-03 13:17:43,856:INFO:127.0.0.1 - - [03/Jun/2025 13:17:43] "[32mGET /volume_up HTTP/1.1[0m" 302 -
+2025-06-03 13:17:43,913:INFO:127.0.0.1 - - [03/Jun/2025 13:17:43] "GET / HTTP/1.1" 200 -
+2025-06-03 13:17:44,650:INFO:Volume up: 1.4000000000000001
+2025-06-03 13:17:44,650:INFO:127.0.0.1 - - [03/Jun/2025 13:17:44] "[32mGET /volume_up HTTP/1.1[0m" 302 -
+2025-06-03 13:17:44,698:INFO:127.0.0.1 - - [03/Jun/2025 13:17:44] "GET / HTTP/1.1" 200 -
+2025-06-03 13:17:45,869:INFO:Volume down: 1.3
+2025-06-03 13:17:45,869:INFO:127.0.0.1 - - [03/Jun/2025 13:17:45] "[32mGET /volume_down HTTP/1.1[0m" 302 -
+2025-06-03 13:17:45,918:INFO:127.0.0.1 - - [03/Jun/2025 13:17:45] "GET / HTTP/1.1" 200 -
+2025-06-03 13:17:46,606:INFO:Volume down: 1.2
+2025-06-03 13:17:46,608:INFO:127.0.0.1 - - [03/Jun/2025 13:17:46] "[32mGET /volume_down HTTP/1.1[0m" 302 -
+2025-06-03 13:17:46,657:INFO:127.0.0.1 - - [03/Jun/2025 13:17:46] "GET / HTTP/1.1" 200 -
+2025-06-03 13:17:47,318:INFO:Volume down: 1.0999999999999999
+2025-06-03 13:17:47,318:INFO:127.0.0.1 - - [03/Jun/2025 13:17:47] "[32mGET /volume_down HTTP/1.1[0m" 302 -
+2025-06-03 13:17:47,365:INFO:127.0.0.1 - - [03/Jun/2025 13:17:47] "GET / HTTP/1.1" 200 -
+2025-06-03 13:17:47,937:INFO:Volume down: 0.9999999999999999
+2025-06-03 13:17:47,937:INFO:127.0.0.1 - - [03/Jun/2025 13:17:47] "[32mGET /volume_down HTTP/1.1[0m" 302 -
+2025-06-03 13:17:48,080:INFO:127.0.0.1 - - [03/Jun/2025 13:17:48] "GET / HTTP/1.1" 200 -
+2025-06-03 13:17:53,945:INFO:Stopped via web and cleared queue.
+2025-06-03 13:17:53,945:INFO:127.0.0.1 - - [03/Jun/2025 13:17:53] "[32mGET /stop HTTP/1.1[0m" 302 -
+2025-06-03 13:17:53,947:INFO:ffmpeg process 33019 has not terminated. Waiting to terminate...
+2025-06-03 13:17:53,955:INFO:ffmpeg process 33019 should have terminated with a return code of -9.
+2025-06-03 13:17:53,993:INFO:127.0.0.1 - - [03/Jun/2025 13:17:53] "GET / HTTP/1.1" 200 -
+2025-06-03 13:17:55,348:INFO:Queue is empty.
+2025-06-03 13:17:56,811:INFO:Triggered play via web.
+2025-06-03 13:17:56,811:INFO:127.0.0.1 - - [03/Jun/2025 13:17:56] "[32mGET /play HTTP/1.1[0m" 302 -
+2025-06-03 13:17:56,858:INFO:127.0.0.1 - - [03/Jun/2025 13:17:56] "GET / HTTP/1.1" 200 -
+2025-06-03 13:18:00,249:INFO:Queue is empty.
+2025-06-03 13:18:05,721:INFO:Added to queue from web: https://www.youtube.com/watch?v=DsbDfqXCEaU
+2025-06-03 13:18:05,721:INFO:127.0.0.1 - - [03/Jun/2025 13:18:05] "[32mPOST /add HTTP/1.1[0m" 302 -
+2025-06-03 13:18:05,769:INFO:127.0.0.1 - - [03/Jun/2025 13:18:05] "GET / HTTP/1.1" 200 -
+2025-06-03 13:18:07,226:INFO:Triggered play via web.
+2025-06-03 13:18:07,226:INFO:127.0.0.1 - - [03/Jun/2025 13:18:07] "[32mGET /play HTTP/1.1[0m" 302 -
+2025-06-03 13:18:07,274:INFO:127.0.0.1 - - [03/Jun/2025 13:18:07] "GET / HTTP/1.1" 200 -
+2025-06-03 13:18:14,006:INFO:Now playing: ลิ้นติดไฟ 👅🔥- TangBadVoice [Official Music Video]
+2025-06-03 13:18:23,755:INFO:127.0.0.1 - - [03/Jun/2025 13:18:23] "[32mGET /resume HTTP/1.1[0m" 302 -
+2025-06-03 13:18:23,801:INFO:127.0.0.1 - - [03/Jun/2025 13:18:23] "GET / HTTP/1.1" 200 -
+2025-06-03 13:18:26,830:INFO:127.0.0.1 - - [03/Jun/2025 13:18:26] "[32mGET /resume HTTP/1.1[0m" 302 -
+2025-06-03 13:18:26,882:INFO:127.0.0.1 - - [03/Jun/2025 13:18:26] "GET / HTTP/1.1" 200 -
+2025-06-03 13:18:28,344:INFO:Paused via web.
+2025-06-03 13:18:28,345:INFO:127.0.0.1 - - [03/Jun/2025 13:18:28] "[32mGET /pause HTTP/1.1[0m" 302 -
+2025-06-03 13:18:28,391:INFO:127.0.0.1 - - [03/Jun/2025 13:18:28] "GET / HTTP/1.1" 200 -
+2025-06-03 13:18:30,182:INFO:Triggered play via web.
+2025-06-03 13:18:30,183:INFO:127.0.0.1 - - [03/Jun/2025 13:18:30] "[32mGET /play HTTP/1.1[0m" 302 -
+2025-06-03 13:18:30,228:INFO:127.0.0.1 - - [03/Jun/2025 13:18:30] "GET / HTTP/1.1" 200 -
+2025-06-03 13:18:33,441:INFO:Resumed via web.
+2025-06-03 13:18:33,441:INFO:127.0.0.1 - - [03/Jun/2025 13:18:33] "[32mGET /resume HTTP/1.1[0m" 302 -
+2025-06-03 13:18:33,490:INFO:127.0.0.1 - - [03/Jun/2025 13:18:33] "GET / HTTP/1.1" 200 -
+2025-06-03 13:18:33,842:INFO:Queue is empty.
+2025-06-03 13:18:41,107:INFO:Stopped via web and cleared queue.
+2025-06-03 13:18:41,107:INFO:127.0.0.1 - - [03/Jun/2025 13:18:41] "[32mGET /stop HTTP/1.1[0m" 302 -
+2025-06-03 13:18:41,120:INFO:ffmpeg process 33470 has not terminated. Waiting to terminate...
+2025-06-03 13:18:41,125:INFO:ffmpeg process 33470 should have terminated with a return code of -9.
+2025-06-03 13:18:41,153:INFO:127.0.0.1 - - [03/Jun/2025 13:18:41] "GET / HTTP/1.1" 200 -
+2025-06-03 13:18:41,521:INFO:Queue is empty.
+2025-06-03 13:18:44,127:INFO:Added to queue from web: https://www.youtube.com/watch?v=o1_c9fwDQSQ
+2025-06-03 13:18:44,127:INFO:127.0.0.1 - - [03/Jun/2025 13:18:44] "[32mPOST /add HTTP/1.1[0m" 302 -
+2025-06-03 13:18:44,174:INFO:127.0.0.1 - - [03/Jun/2025 13:18:44] "GET / HTTP/1.1" 200 -
+2025-06-03 13:19:04,785:INFO:Triggered play via web.
+2025-06-03 13:19:04,785:INFO:127.0.0.1 - - [03/Jun/2025 13:19:04] "[32mGET /play HTTP/1.1[0m" 302 -
+2025-06-03 13:19:04,834:INFO:127.0.0.1 - - [03/Jun/2025 13:19:04] "GET / HTTP/1.1" 200 -
+2025-06-03 13:19:08,724:INFO:Now playing: ⭐️มาแรงTikTok!! ( เลิกกั๊กรักก่อน - ทูลกระหม่อม ) Ver. ReMix แดนซ์ยกล้อโจ๊ะๆ BY [ ดีเจกิต รีมิกซ์ ]
+2025-06-03 13:20:25,235:INFO:Stopped via web and cleared queue.
+2025-06-03 13:20:25,236:INFO:127.0.0.1 - - [03/Jun/2025 13:20:25] "[32mGET /stop HTTP/1.1[0m" 302 -
+2025-06-03 13:20:25,239:INFO:ffmpeg process 33942 has not terminated. Waiting to terminate...
+2025-06-03 13:20:25,245:INFO:ffmpeg process 33942 should have terminated with a return code of -9.
+2025-06-03 13:20:25,347:INFO:127.0.0.1 - - [03/Jun/2025 13:20:25] "GET / HTTP/1.1" 200 -
+2025-06-03 13:20:28,981:INFO:Queue is empty.
+2025-06-03 13:27:26,819:INFO:Shard ID None has successfully RESUMED session 007b807dae86b88678b046af9f6ba73e.
+2025-06-03 13:37:14,532:INFO:logging in using static token
+2025-06-03 13:38:28,886:INFO:logging in using static token
+2025-06-03 13:38:28,890:INFO:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.0.0.133:5000
+2025-06-03 13:38:28,890:INFO:[33mPress CTRL+C to quit[0m
+2025-06-03 13:38:30,376:INFO:Shard ID None has connected to Gateway (Session ID: 4f9c541af16cb1c9a8a71eb3d7eb8d52).
+2025-06-03 13:38:31,726:INFO:127.0.0.1 - - [03/Jun/2025 13:38:31] "GET / HTTP/1.1" 200 -
+2025-06-03 13:38:31,925:INFO:127.0.0.1 - - [03/Jun/2025 13:38:31] "GET /static/style.css HTTP/1.1" 200 -
+2025-06-03 13:38:32,398:INFO:Bot logged in as พี่มาแล้วน้อง#3371
+2025-06-03 13:38:32,805:INFO:Global commands synced.
+2025-06-03 13:38:33,109:INFO:Commands synced to guild: 894871922637172747
+2025-06-03 13:38:46,358:INFO:Connecting to voice...
+2025-06-03 13:38:46,358:INFO:Starting voice handshake... (connection attempt 1)
+2025-06-03 13:38:46,814:INFO:Voice handshake complete. Endpoint found: singapore11130.discord.media
+2025-06-03 13:38:46,868:INFO:Voice connection complete.
+2025-06-03 13:38:47,228:INFO:Joined voice channel: ล็อบบี้
+2025-06-03 13:38:53,934:INFO:punpunkzc woke up punpunkzc.
+2025-06-03 13:39:07,291:INFO:TTS message: หวัดดีเจ้าพวกมนุษ
+2025-06-03 13:39:09,392:INFO:ffmpeg process 44793 successfully terminated with return code of 0.
+2025-06-03 13:39:13,198:INFO:Added to queue from web: https://www.youtube.com/watch?v=DsbDfqXCEaU
+2025-06-03 13:39:13,198:INFO:127.0.0.1 - - [03/Jun/2025 13:39:13] "[32mPOST /add HTTP/1.1[0m" 302 -
+2025-06-03 13:39:13,246:INFO:127.0.0.1 - - [03/Jun/2025 13:39:13] "GET / HTTP/1.1" 200 -
+2025-06-03 13:39:13,405:INFO:127.0.0.1 - - [03/Jun/2025 13:39:13] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-06-03 13:39:15,237:INFO:Triggered play via web.
+2025-06-03 13:39:15,237:INFO:127.0.0.1 - - [03/Jun/2025 13:39:15] "[32mGET /play HTTP/1.1[0m" 302 -
+2025-06-03 13:39:15,367:INFO:127.0.0.1 - - [03/Jun/2025 13:39:15] "GET / HTTP/1.1" 200 -
+2025-06-03 13:39:15,587:INFO:127.0.0.1 - - [03/Jun/2025 13:39:15] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-06-03 13:39:21,379:INFO:Now playing: ลิ้นติดไฟ 👅🔥- TangBadVoice [Official Music Video]
+2025-06-03 13:39:28,857:INFO:Volume down: 0.4
+2025-06-03 13:39:28,858:INFO:127.0.0.1 - - [03/Jun/2025 13:39:28] "[32mGET /volume_down HTTP/1.1[0m" 302 -
+2025-06-03 13:39:28,999:INFO:127.0.0.1 - - [03/Jun/2025 13:39:28] "GET / HTTP/1.1" 200 -
+2025-06-03 13:39:29,143:INFO:127.0.0.1 - - [03/Jun/2025 13:39:29] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-06-03 13:39:30,919:INFO:Volume down: 0.30000000000000004
+2025-06-03 13:39:30,919:INFO:127.0.0.1 - - [03/Jun/2025 13:39:30] "[32mGET /volume_down HTTP/1.1[0m" 302 -
+2025-06-03 13:39:30,966:INFO:127.0.0.1 - - [03/Jun/2025 13:39:30] "GET / HTTP/1.1" 200 -
+2025-06-03 13:39:31,021:INFO:127.0.0.1 - - [03/Jun/2025 13:39:31] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-06-03 13:40:02,548:INFO:127.0.0.1 - - [03/Jun/2025 13:40:02] "GET / HTTP/1.1" 200 -
+2025-06-03 13:40:02,609:INFO:127.0.0.1 - - [03/Jun/2025 13:40:02] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-06-03 13:40:43,060:INFO:Added to queue from web: https://www.youtube.com/watch?v=ahGRA2ajlHA&list=RDahGRA2ajlHA&start_radio=1
+2025-06-03 13:40:43,060:INFO:127.0.0.1 - - [03/Jun/2025 13:40:43] "[32mPOST /add HTTP/1.1[0m" 302 -
+2025-06-03 13:40:43,191:INFO:127.0.0.1 - - [03/Jun/2025 13:40:43] "GET / HTTP/1.1" 200 -
+2025-06-03 13:40:43,248:INFO:127.0.0.1 - - [03/Jun/2025 13:40:43] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-06-03 13:40:46,248:INFO:Paused via web.
+2025-06-03 13:40:46,249:INFO:127.0.0.1 - - [03/Jun/2025 13:40:46] "[32mGET /pause HTTP/1.1[0m" 302 -
+2025-06-03 13:40:46,295:INFO:127.0.0.1 - - [03/Jun/2025 13:40:46] "GET / HTTP/1.1" 200 -
+2025-06-03 13:40:46,434:INFO:127.0.0.1 - - [03/Jun/2025 13:40:46] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-06-03 13:40:47,448:INFO:Resumed via web.
+2025-06-03 13:40:47,448:INFO:127.0.0.1 - - [03/Jun/2025 13:40:47] "[32mGET /resume HTTP/1.1[0m" 302 -
+2025-06-03 13:40:47,581:INFO:127.0.0.1 - - [03/Jun/2025 13:40:47] "GET / HTTP/1.1" 200 -
+2025-06-03 13:40:47,733:INFO:127.0.0.1 - - [03/Jun/2025 13:40:47] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-06-03 13:40:50,838:INFO:Skipped via web.
+2025-06-03 13:40:50,839:INFO:127.0.0.1 - - [03/Jun/2025 13:40:50] "[32mGET /skip HTTP/1.1[0m" 302 -
+2025-06-03 13:40:50,848:INFO:ffmpeg process 44945 has not terminated. Waiting to terminate...
+2025-06-03 13:40:50,852:INFO:ffmpeg process 44945 should have terminated with a return code of -9.
+2025-06-03 13:40:51,049:INFO:127.0.0.1 - - [03/Jun/2025 13:40:51] "GET / HTTP/1.1" 200 -
+2025-06-03 13:40:51,113:INFO:127.0.0.1 - - [03/Jun/2025 13:40:51] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-06-03 13:40:54,885:INFO:Now playing: คุมเกม - Soundtiss  x marr team  | “เพลง marr” EP7
+2025-06-03 13:43:07,315:INFO:127.0.0.1 - - [03/Jun/2025 13:43:07] "[32mGET /resume HTTP/1.1[0m" 302 -
+2025-06-03 13:43:07,437:INFO:127.0.0.1 - - [03/Jun/2025 13:43:07] "GET / HTTP/1.1" 200 -
+2025-06-03 13:43:07,563:INFO:127.0.0.1 - - [03/Jun/2025 13:43:07] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-06-03 13:43:11,662:INFO:Paused via web.
+2025-06-03 13:43:11,663:INFO:127.0.0.1 - - [03/Jun/2025 13:43:11] "[32mGET /pause HTTP/1.1[0m" 302 -
+2025-06-03 13:43:11,790:INFO:127.0.0.1 - - [03/Jun/2025 13:43:11] "GET / HTTP/1.1" 200 -
+2025-06-03 13:43:11,962:INFO:127.0.0.1 - - [03/Jun/2025 13:43:11] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-06-03 13:43:12,512:INFO:Resumed via web.
+2025-06-03 13:43:12,512:INFO:127.0.0.1 - - [03/Jun/2025 13:43:12] "[32mGET /resume HTTP/1.1[0m" 302 -
+2025-06-03 13:43:12,646:INFO:127.0.0.1 - - [03/Jun/2025 13:43:12] "GET / HTTP/1.1" 200 -
+2025-06-03 13:43:12,785:INFO:127.0.0.1 - - [03/Jun/2025 13:43:12] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-06-03 13:43:13,902:INFO:Stopped via web and cleared queue.
+2025-06-03 13:43:13,903:INFO:127.0.0.1 - - [03/Jun/2025 13:43:13] "[32mGET /stop HTTP/1.1[0m" 302 -
+2025-06-03 13:43:13,912:INFO:ffmpeg process 45670 has not terminated. Waiting to terminate...
+2025-06-03 13:43:13,917:INFO:ffmpeg process 45670 should have terminated with a return code of -9.
+2025-06-03 13:43:14,039:INFO:127.0.0.1 - - [03/Jun/2025 13:43:14] "GET / HTTP/1.1" 200 -
+2025-06-03 13:43:14,163:INFO:127.0.0.1 - - [03/Jun/2025 13:43:14] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-06-03 13:43:14,942:INFO:Queue is empty.
+2025-06-03 13:50:54,507:INFO:The voice handshake is being terminated for Channel ID 894871922637172753 (Guild ID 894871922637172747)
+2025-06-03 13:51:39,894:INFO:Connecting to voice...
+2025-06-03 13:51:39,894:INFO:Starting voice handshake... (connection attempt 1)
+2025-06-03 13:51:40,351:INFO:Voice handshake complete. Endpoint found: singapore11079.discord.media
+2025-06-03 13:51:40,405:INFO:Voice connection complete.
+2025-06-03 13:51:40,773:INFO:Joined voice channel: ทั่วไป
+2025-06-03 13:57:35,103:INFO:logging in using static token
+2025-06-03 13:57:35,107:INFO:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.0.0.133:5000
+2025-06-03 13:57:35,107:INFO:[33mPress CTRL+C to quit[0m
+2025-06-03 13:57:36,522:INFO:Shard ID None has connected to Gateway (Session ID: 856d5e2c7b644a6d39cb7b50c612646b).
+2025-06-03 13:57:38,538:INFO:Bot logged in as พี่มาแล้วน้อง#3371
+2025-06-03 13:57:38,916:INFO:Global commands synced.
+2025-06-03 13:57:39,270:INFO:Commands synced to guild: 575267060569997322
+2025-06-03 13:57:49,028:INFO:Connecting to voice...
+2025-06-03 13:57:49,029:INFO:Starting voice handshake... (connection attempt 1)
+2025-06-03 13:57:49,483:INFO:Voice handshake complete. Endpoint found: singapore11079.discord.media
+2025-06-03 13:57:49,529:INFO:Voice connection complete.
+2025-06-03 13:57:49,889:INFO:Joined voice channel: ทั่วไป
+2025-06-03 13:57:57,715:INFO:punpunkzc woke up punpunkzc.
+2025-06-03 13:59:21,403:INFO:TTS message: หวัดดีเจ้าพวกมนุษ
+2025-06-03 13:59:23,441:INFO:ffmpeg process 54552 successfully terminated with return code of 0.
+2025-06-03 16:22:26,932:INFO:logging in using static token
+2025-06-03 16:22:26,935:INFO:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.0.1.245:5000
+2025-06-03 16:22:26,936:INFO:[33mPress CTRL+C to quit[0m
+2025-06-03 16:22:28,319:INFO:Shard ID None has connected to Gateway (Session ID: 778ca45e26e60bc4293303a18450a3b8).
+2025-06-03 16:22:30,377:INFO:Bot logged in as พี่มาแล้วน้อง#3371
+2025-06-03 16:22:30,841:INFO:Global commands synced.
+2025-06-03 16:22:31,218:INFO:Commands synced to guild: 575267060569997322
+2025-06-03 16:22:37,728:INFO:127.0.0.1 - - [03/Jun/2025 16:22:37] "GET / HTTP/1.1" 200 -
+2025-06-03 16:22:37,863:INFO:127.0.0.1 - - [03/Jun/2025 16:22:37] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-06-03 16:23:21,553:INFO:127.0.0.1 - - [03/Jun/2025 16:23:21] "HEAD / HTTP/1.1" 200 -
+2025-06-03 16:28:27,422:INFO:127.0.0.1 - - [03/Jun/2025 16:28:27] "HEAD / HTTP/1.1" 200 -
+2025-06-03 16:29:35,152:INFO:Shard ID None has successfully RESUMED session 778ca45e26e60bc4293303a18450a3b8.
+2025-06-03 16:33:32,374:INFO:127.0.0.1 - - [03/Jun/2025 16:33:32] "HEAD / HTTP/1.1" 200 -
+2025-06-03 16:38:37,439:INFO:127.0.0.1 - - [03/Jun/2025 16:38:37] "HEAD / HTTP/1.1" 200 -
+2025-06-03 16:43:14,403:INFO:127.0.0.1 - - [03/Jun/2025 16:43:14] "GET / HTTP/1.1" 200 -
+2025-06-03 16:43:14,538:INFO:127.0.0.1 - - [03/Jun/2025 16:43:14] "[36mGET /static/style.css HTTP/1.1[0m" 304 -
+2025-06-03 16:43:44,314:INFO:127.0.0.1 - - [03/Jun/2025 16:43:44] "HEAD / HTTP/1.1" 200 -
+2025-06-03 16:46:58,567:INFO:Connecting to voice...
+2025-06-03 16:46:58,568:INFO:Starting voice handshake... (connection attempt 1)
+2025-06-03 16:46:59,016:INFO:Voice handshake complete. Endpoint found: singapore11059.discord.media
+2025-06-03 16:46:59,072:INFO:Voice connection complete.
+2025-06-03 16:47:00,926:INFO:Joined voice channel: N-word
+2025-06-03 16:47:18,022:INFO:TTS message: ไม่เล่นครับไอ้โง่
+2025-06-03 16:47:20,031:INFO:ffmpeg process 14649 successfully terminated with return code of 0.
+2025-06-03 16:48:49,939:INFO:127.0.0.1 - - [03/Jun/2025 16:48:49] "HEAD / HTTP/1.1" 200 -
+2025-06-03 16:53:55,411:INFO:127.0.0.1 - - [03/Jun/2025 16:53:55] "HEAD / HTTP/1.1" 200 -
+2025-06-03 16:59:02,434:INFO:127.0.0.1 - - [03/Jun/2025 16:59:02] "HEAD / HTTP/1.1" 200 -
+2025-06-03 17:04:07,575:INFO:127.0.0.1 - - [03/Jun/2025 17:04:07] "HEAD / HTTP/1.1" 200 -
+2025-06-03 17:09:12,958:INFO:127.0.0.1 - - [03/Jun/2025 17:09:12] "HEAD / HTTP/1.1" 200 -
+2025-06-03 17:14:19,449:INFO:127.0.0.1 - - [03/Jun/2025 17:14:19] "HEAD / HTTP/1.1" 200 -
+2025-06-03 17:19:26,198:INFO:127.0.0.1 - - [03/Jun/2025 17:19:26] "HEAD / HTTP/1.1" 200 -
+2025-06-03 17:24:31,137:INFO:127.0.0.1 - - [03/Jun/2025 17:24:31] "HEAD / HTTP/1.1" 200 -
+2025-06-03 17:29:36,168:INFO:127.0.0.1 - - [03/Jun/2025 17:29:36] "HEAD / HTTP/1.1" 200 -
+2025-06-03 17:32:00,741:INFO:Disconnected from voice by force... potentially reconnecting.
+2025-06-03 17:32:01,142:INFO:Shard ID None session has been invalidated.
+2025-06-03 17:32:06,855:INFO:The voice handshake is being terminated for Channel ID 1343949078014332990 (Guild ID 738709617571528735)
+2025-06-03 17:32:06,856:INFO:Reconnect was unsuccessful, disconnecting from voice normally...
+2025-06-03 18:54:31,661:INFO:logging in using static token
+2025-06-03 18:56:14,645:INFO:logging in using static token
+2025-06-03 18:57:57,668:INFO:logging in using static token
+2025-06-03 18:58:32,774:INFO:logging in using static token
+2025-06-03 18:59:33,801:INFO:logging in using static token
+2025-06-03 18:59:35,083:INFO:Shard ID None has connected to Gateway (Session ID: a930dc8faa3c8603c494cdc1ef479ef7).
+2025-06-03 18:59:37,271:INFO:Bot logged in as พี่มาแล้วน้อง#3371
+2025-06-03 18:59:37,675:INFO:Global commands synced.
+2025-06-03 18:59:38,007:ERROR:Ignoring exception in on_ready
+Traceback (most recent call last):
+  File "/usr/local/python/3.12.1/lib/python3.12/site-packages/discord/client.py", line 481, in _run_event
+    await coro(*args, **kwargs)
+  File "/workspaces/discord_poke/main.py", line 46, in on_ready
+    await tree.sync(guild=guild)
+  File "/usr/local/python/3.12.1/lib/python3.12/site-packages/discord/app_commands/tree.py", line 1131, in sync
+    data = await self._http.bulk_upsert_guild_commands(self.client.application_id, guild.id, payload=payload)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/python/3.12.1/lib/python3.12/site-packages/discord/http.py", line 756, in request
+    raise Forbidden(response, data)
+discord.errors.Forbidden: 403 Forbidden (error code: 50001): Missing Access
+2025-06-03 19:02:33,544:INFO:logging in using static token
+2025-06-03 19:02:35,248:INFO:Shard ID None has connected to Gateway (Session ID: 31256ee5289b16ee493eef9dd0d2acd0).
+2025-06-03 19:02:37,291:INFO:Bot logged in as พี่มาแล้วน้อง#3371
+2025-06-03 19:02:37,746:INFO:Global commands synced.
+2025-06-03 19:02:38,055:ERROR:Ignoring exception in on_ready
+Traceback (most recent call last):
+  File "/usr/local/python/3.12.1/lib/python3.12/site-packages/discord/client.py", line 481, in _run_event
+    await coro(*args, **kwargs)
+  File "/workspaces/discord_poke/main.py", line 46, in on_ready
+    await tree.sync(guild=guild)
+  File "/usr/local/python/3.12.1/lib/python3.12/site-packages/discord/app_commands/tree.py", line 1131, in sync
+    data = await self._http.bulk_upsert_guild_commands(self.client.application_id, guild.id, payload=payload)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/python/3.12.1/lib/python3.12/site-packages/discord/http.py", line 756, in request
+    raise Forbidden(response, data)
+discord.errors.Forbidden: 403 Forbidden (error code: 50001): Missing Access
