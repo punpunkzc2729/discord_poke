@@ -1,5 +1,5 @@
 discord.py
-Flask
+Flask[async]==2.3.3 
 gTTS
 python-dotenv
 spotipy
