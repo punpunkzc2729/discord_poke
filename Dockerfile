@@ -1,27 +1,31 @@
-FROM python:3.12-slim
+# ใช้ Python Image ที่มีขนาดเล็กจาก Debian/Ubuntu
+FROM python:3.10-slim-buster
 
-# Install system dependencies for FFmpeg and Opus
-RUN apt-get update && apt-get install -y \
-    ffmpeg \
+# อัปเดต package list และติดตั้งไลบรารีระบบที่จำเป็น:
+# libopus0 สำหรับการรองรับ Opus ใน Discord voice
+# ffmpeg สำหรับการประมวลผลเสียงและวิดีโอ (จำเป็นสำหรับ yt-dlp)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
     libopus0 \
-    --no-install-recommends && \
+    ffmpeg && \
+    apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Add common lib paths to LD_LIBRARY_PATH
-ENV LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:$LD_LIBRARY_PATH
-
-# Set working directory
+# กำหนด Working Directory ใน Container
 WORKDIR /app
 
-# Copy requirements file and install Python dependencies
+# คัดลอกไฟล์ requirements.txt เข้าไปใน Working Directory
 COPY requirements.txt .
+
+# ติดตั้ง Python Dependencies ตาม requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application code
+# คัดลอกโค้ดแอปพลิเคชันที่เหลือทั้งหมดเข้าไป
 COPY . .
 
-# Expose the port (only for the web service)
+# กำหนด Port ที่ Flask จะรัน (default คือ 5000)
 EXPOSE 5000
 
-# Command to run (this will be overridden by Procfile)
+# กำหนดคำสั่งที่จะรันแอปพลิเคชันเมื่อ Container เริ่มทำงาน
+# (คล้ายกับ Start Command หรือ Procfile)
 CMD ["python", "main.py"]
