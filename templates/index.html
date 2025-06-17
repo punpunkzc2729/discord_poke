@@ -3,845 +3,1033 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Music Player</title>
+    <title>Discord Music Bot</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
-        /* General body and container styling */
+        :root {
+            --bg-gradient-start: #2a0050;
+            --bg-gradient-end: #0a001a;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --text-light: #e0e0e0;
+            --text-lighter: #f0f0f0;
+            --primary-purple: #7289da; /* Discord purple */
+            --spotify-green: #1DB954;
+            --accent-gradient-start: #8a2be2; /* BlueViolet */
+            --accent-gradient-end: #4b0082; /* Indigo */
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Inter', sans-serif; /* Ensuring Inter font is applied */
+            font-family: 'Inter', sans-serif;
         }
 
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
-            color: white; /* Ensure text is white */
+            color: var(--text-light);
+            overflow-x: hidden;
         }
 
-        .player-container {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(20px);
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            max-width: 400px;
+        .dashboard-container {
+            display: flex;
+            flex-direction: column;
             width: 100%;
-            text-align: center;
-            transition: transform 0.3s ease;
-        }
-
-        .player-container:hover {
-            transform: translateY(-5px);
-        }
-
-        /* Album Art */
-        .album-art {
-            width: 250px;
-            height: 250px;
+            max-width: 1200px;
+            background: var(--card-bg);
             border-radius: 20px;
-            margin: 0 auto 30px;
-            overflow: hidden;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
-            position: relative;
-            transition: transform 0.3s ease;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            gap: 20px;
         }
 
-        .album-art:hover {
-            transform: scale(1.05);
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--card-border);
         }
 
-        .album-art img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.3s ease;
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-lighter);
         }
 
-        .album-art.playing img {
-            animation: rotate 20s linear infinite;
+        .header h1 span {
+            font-size: 1rem;
+            opacity: 0.7;
+            display: block;
+            font-weight: 400;
         }
 
-        @keyframes rotate {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+        .header .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        /* Song Info */
-        .song-info {
-            margin-bottom: 30px;
-            color: white;
-        }
-
-        .song-title {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 8px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-        }
-
-        .artist-name {
-            font-size: 16px;
-            opacity: 0.8;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-        }
-
-        /* Progress Bar */
-        .progress-container {
-            margin: 20px 0;
-            background: rgba(255, 255, 255, 0.2);
-            height: 6px;
-            border-radius: 3px;
-            overflow: hidden;
-        }
-
-        .progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #ff6b6b, #feca57);
-            border-radius: 3px;
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-
-        /* Controls */
-        .controls {
+        .header .user-profile .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-purple);
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 20px;
-            margin-top: 30px;
+            font-size: 1.2rem;
+            color: white;
+            opacity: 0.8;
         }
 
-        .control-btn {
-            background: rgba(255, 255, 255, 0.2);
+        .navbar {
+            display: flex;
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 10px;
+            gap: 10px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+
+        .navbar button {
+            background: transparent;
+            border: none;
+            color: var(--text-light);
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: background 0.3s ease, color 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .navbar button.active,
+        .navbar button:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--text-lighter);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .section-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            border: 1px solid var(--card-border);
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .section-card h2 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--text-lighter);
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            align-items: center;
+        }
+
+        .search-bar input {
+            flex-grow: 1;
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: 1px solid var(--card-border);
+            background: rgba(0, 0, 0, 0.2);
+            color: var(--text-lighter);
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-bar input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .search-bar input:focus {
+            border-color: var(--primary-purple);
+        }
+
+        .search-bar button {
+            background: var(--primary-purple);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .search-bar button:hover {
+            background: #5b6ecd;
+        }
+
+        /* Now Playing section */
+        .now-playing-card .album-cover {
+            width: 180px;
+            height: 180px;
+            border-radius: 15px;
+            margin: 0 auto 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            background-color: #333; /* Placeholder background */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ccc;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        .now-playing-card .album-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .now-playing-card .song-details {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .now-playing-card .song-details .title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-lighter);
+        }
+
+        .now-playing-card .song-details .artist {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            height: 5px;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%; /* Will be updated by JS */
+            background: linear-gradient(90deg, #ff6b6b, #feca57);
+            border-radius: 3px;
+            transition: width 0.1s linear; /* Smooth progress bar movement */
+        }
+
+        .time-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            opacity: 0.7;
+            margin-bottom: 15px;
+        }
+
+        .player-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .player-controls button {
+            background: rgba(255, 255, 255, 0.1);
             border: none;
             border-radius: 50%;
-            width: 60px;
-            height: 60px;
+            width: 45px;
+            height: 45px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: white; /* Ensure icons are white */
+            transition: background 0.3s ease, transform 0.2s ease;
+            color: var(--text-lighter);
+        }
+        
+        .player-controls button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
         }
 
-        .control-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: scale(1.1);
+        .player-controls button .icon {
+            font-size: 1.2rem;
         }
 
-        .control-btn:active {
-            transform: scale(0.95);
+        .player-controls .play-btn {
+            background: var(--primary-purple);
+            width: 60px;
+            height: 60px;
         }
 
-        .play-pause-btn {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #ff6b6b, #feca57);
+        .player-controls .play-btn:hover {
+            background: #5b6ecd;
         }
 
-        .play-pause-btn:hover {
-            background: linear-gradient(135deg, #ff5252, #ffca28);
-            box-shadow: 0 10px 25px rgba(255, 107, 107, 0.4);
-        }
-
-        .control-icon {
-            width: 24px;
-            height: 24px;
-            fill: currentColor; /* Use currentColor for SVG fill */
-            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-        }
-
-        .play-pause-btn .control-icon {
-            width: 32px;
-            height: 32px;
-        }
-
-        /* Volume Control */
-        .volume-container {
-            margin-top: 20px;
+        .volume-control {
             display: flex;
             align-items: center;
-            justify-content: center;
             gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        .volume-control .icon {
+            font-size: 1.1rem;
+            opacity: 0.8;
         }
 
         .volume-slider {
-            width: 100px;
+            width: 150px;
             height: 4px;
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 2px;
             outline: none;
             -webkit-appearance: none;
-            appearance: none; /* Standard property */
+            appearance: none;
         }
 
         .volume-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 16px;
-            height: 16px;
-            background: white;
+            width: 14px;
+            height: 14px;
+            background: var(--text-lighter);
             border-radius: 50%;
             cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-        }
-        /* For Firefox */
-        .volume-slider::-moz-range-thumb {
-            width: 16px;
-            height: 16px;
-            background: white;
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
         }
 
-        .volume-icon {
-            width: 20px;
-            height: 20px;
-            fill: currentColor; /* Use currentColor for SVG fill */
-            opacity: 0.8;
+        /* Queue Section */
+        .queue-list {
+            list-style: none;
+            padding: 0;
+            max-height: 300px;
+            overflow-y: auto;
         }
 
-        /* Authentication Section */
-        .auth-container {
-            margin-top: 30px;
+        .queue-list li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 0.9rem;
+        }
+
+        .queue-list li:last-child {
+            border-bottom: none;
+        }
+
+        .queue-list li .song-details {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+        }
+
+        .queue-list li .song-details .title {
+            color: var(--text-lighter);
+            font-weight: 500;
+        }
+
+        .queue-list li .song-details .artist {
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+        .queue-list li .duration {
+            opacity: 0.7;
+        }
+
+        /* Flash Messages */
+        .flash-messages {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .flash-message {
+            padding: 10px 15px;
+            border-radius: 8px;
+            color: white;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 0.5s ease-out forwards;
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
+        .flash-message.success { background-color: rgba(34, 197, 94, 0.9); }
+        .flash-message.error { background-color: rgba(239, 68, 68, 0.9); }
+        .flash-message.info { background-color: rgba(59, 130, 246, 0.9); }
+
+        @keyframes fadeIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-20px); }
+        }
+        
+        /* Hidden elements for authenticated state */
+        .auth-hidden {
+            display: none !important;
+        }
+
+        /* Login buttons */
+        .login-buttons-container {
             display: flex;
             flex-direction: column;
             gap: 15px;
             align-items: center;
         }
 
-        .auth-btn, .web-control-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            padding: 12px 24px;
+        .login-btn {
+            background: var(--primary-purple);
             color: white;
-            font-size: 14px;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            width: 200px;
-            justify-content: center;
-            text-decoration: none; /* For <a> tags acting as buttons */
-        }
-
-        .auth-btn:hover, .web-control-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-        }
-
-        .discord-btn {
-            background: linear-gradient(135deg, #5865f2, #7289da);
-            border: 1px solid rgba(88, 101, 242, 0.3);
-        }
-
-        .discord-btn:hover {
-            background: linear-gradient(135deg, #4752c4, #5b6ecd);
-            box-shadow: 0 8px 25px rgba(88, 101, 242, 0.4);
-        }
-
-        .spotify-btn {
-            background: linear-gradient(135deg, #1db954, #1ed760);
-            border: 1px solid rgba(29, 185, 84, 0.3);
-        }
-
-        .spotify-btn:hover {
-            background: linear-gradient(135deg, #1aa34a, #1bc653);
-            box-shadow: 0 8px 25px rgba(29, 185, 84, 0.4);
-        }
-
-        .auth-icon {
-            width: 20px;
-            height: 20px;
-            fill: currentColor;
-        }
-
-        .user-info {
+            transition: background 0.3s ease, transform 0.2s ease;
             display: flex;
             align-items: center;
             gap: 10px;
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 14px;
-            font-weight: 500;
+            width: fit-content;
         }
 
-        .status-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #1db954;
-            animation: pulse 2s infinite;
+        .login-btn.spotify {
+            background: var(--spotify-green);
         }
 
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-
-        /* Input and Buttons for Web Controls */
-        .web-controls {
-            margin-top: 2rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .queue-input {
-            width: 100%;
-            padding: 0.75rem;
-            border: none;
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            font-size: 0.9rem;
-            outline: none;
-        }
-
-        .queue-input::placeholder {
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        .queue-input:focus {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .add-queue-btn {
-            width: 100%;
-            padding: 0.75rem;
-            background: rgba(147, 51, 234, 0.8);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .add-queue-btn:hover {
-            background: rgba(147, 51, 234, 1);
+        .login-btn:hover {
             transform: translateY(-2px);
         }
 
-        .control-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); /* Responsive grid */
-            gap: 0.5rem;
-            margin-top: 0.5rem;
+        .login-btn.spotify:hover {
+            background: #1aa34a;
+        }
+        .login-btn.discord:hover {
+            background: #5b6ecd;
         }
 
-        .web-control-btn {
-            padding: 0.5rem;
-            border: none;
-            border-radius: 8px;
-            color: white;
-            font-size: 0.8rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .web-control-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-
-        /* Background colors for control buttons (using Tailwind-like names) */
-        .bg-blue-600 { background: #2563eb; }
-        .bg-blue-600:hover { background: #1d4ed8; }
-        .bg-yellow-600 { background: #d97706; }
-        .bg-yellow-600:hover { background: #b45309; }
-        .bg-green-600 { background: #16a34a; }
-        .bg-green-600:hover { background: #15803d; }
-        .bg-indigo-600 { background: #4f46e5; }
-        .bg-indigo-600:hover { background: #4338ca; }
-        .bg-red-600 { background: #dc2626; }
-        .bg-red-600:hover { background: #b91c1c; }
-        .bg-gray-600 { background: #4b5563; }
-        .bg-gray-600:hover { background: #374151; }
-
-        /* Flash Message styling (for Flask-rendered messages) */
-        .flash-message {
-            padding: 0.75rem;
-            margin: 0.5rem 0;
-            border-radius: 8px;
+        .login-status-message {
             font-size: 0.9rem;
+            opacity: 0.8;
             text-align: center;
-            backdrop-filter: blur(10px);
-            opacity: 1; /* Default opacity */
-            transition: opacity 0.5s ease-out; /* For fade out */
         }
-        .flash-message.bg-green-600 { background: rgba(34, 197, 94, 0.8); }
-        .flash-message.bg-red-600 { background: rgba(239, 68, 68, 0.8); }
-        .flash-message.bg-blue-600 { background: rgba(59, 130, 246, 0.8); }
 
-
-        /* Responsive adjustments */
-        @media (max-width: 480px) {
-            .player-container {
-                padding: 30px 20px;
+        /* Media Queries for responsiveness */
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
             }
-            .album-art {
-                width: 200px;
-                height: 200px;
+            .dashboard-container {
+                padding: 15px;
             }
-            .song-title {
-                font-size: 20px;
+            .header h1 {
+                font-size: 1.5rem;
             }
-            .auth-btn, .web-control-btn {
-                width: 100%; /* Full width for smaller buttons on mobile */
-                padding: 10px 20px;
-                font-size: 13px;
+            .header h1 span {
+                font-size: 0.8rem;
             }
-            .controls {
-                gap: 10px;
+            .section-card {
+                padding: 20px;
             }
-            .control-btn {
+            .now-playing-card .album-cover {
+                width: 150px;
+                height: 150px;
+            }
+            .player-controls button {
+                width: 40px;
+                height: 40px;
+            }
+            .player-controls .play-btn {
                 width: 50px;
                 height: 50px;
             }
-            .play-pause-btn {
-                width: 70px;
-                height: 70px;
+            .volume-slider {
+                width: 100px;
             }
-            .control-icon {
-                width: 20px;
-                height: 20px;
+        }
+
+        @media (max-width: 480px) {
+            .dashboard-container {
+                padding: 10px;
             }
-            .play-pause-btn .control-icon {
-                width: 28px;
-                height: 28px;
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
             }
-            .control-grid {
-                grid-template-columns: repeat(2, 1fr); /* 2 columns on small screens */
+            .header h1 {
+                font-size: 1.3rem;
+            }
+            .navbar {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .navbar button {
+                padding: 8px 15px;
+                font-size: 0.8rem;
+            }
+            .search-bar {
+                flex-direction: column;
+                gap: 15px;
+            }
+            .search-bar button {
+                width: 100%;
+            }
+            .now-playing-card .album-cover {
+                width: 120px;
+                height: 120px;
+            }
+            .now-playing-card .song-details .title {
+                font-size: 1.2rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="player-container">
-        <div class="album-art" id="albumArt">
-            <img id="coverImage" src="https://placehold.co/400x400/94a3b8/ffffff?text=No+Cover" alt="Album Cover">
-        </div>
-                <div class="song-info">
-            <div class="song-title" id="songTitle"></div>
-            <div class="artist-name" id="artistName"></div>
-        </div>
-                <div class="progress-container">
-            <div class="progress-bar" id="progressBar"></div>
-        </div>
-        
-        <!-- Flash Messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="mb-4 mt-2 space-y-2">
-                    {% for category, message in messages %}
-                        <div class="flash-message {% if category == 'success' %}bg-green-600{% elif category == 'error' %}bg-red-600{% else %}bg-blue-600{% endif %}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
-
-        <div class="controls">
-            <button class="control-btn" id="prevBtn" title="Previous">
-                <svg class="control-icon" viewBox="0 0 24 24">
-                    <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
-                </svg>
-            </button>
-                        <button class="control-btn play-pause-btn" id="playPauseBtn" title="Play/Pause">
-                <svg class="control-icon" id="playIcon" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z"/>
-                </svg>
-                <svg class="control-icon" id="pauseIcon" viewBox="0 0 24 24" style="display: none;">
-                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
-                </svg>
-            </button>
-                        <button class="control-btn" id="nextBtn" title="Next">
-                <svg class="control-icon" viewBox="0 0 24 24">
-                    <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
-                </svg>
-            </button>
-        </div>
-        
-        <div class="volume-container">
-            <svg class="volume-icon" viewBox="0 0 24 24">
-                <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
-            </svg>
-            <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="70">
-        </div>
-        
-        <div class="auth-container">
-            <a href="{{ url_for('login_discord') }}" class="auth-btn discord-btn" id="discordLoginBtn">
-                <svg class="auth-icon" viewBox="0 0 24 24">
-                    <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419-.0188 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1568 2.4189Z"/>
-                </svg>
-                Login with Discord
-            </a>
-            
-            <a href="#" class="auth-btn spotify-btn" id="spotifyLoginBtn" style="display: none;">
-                <svg class="auth-icon" viewBox="0 0 24 24">
-                    <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.6 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.42 1.56-.299.421-1.02.599-1.559.3z"/>
-                </svg>
-                Connect Spotify
-            </a>
-            
-            <div class="user-info" id="userInfo" style="display: none;">
-                <div class="status-indicator"></div>
-                <span id="userStatus">Connected</span>
+    <script>
+        // Pass base_url from Flask to JavaScript
+        const BASE_URL = "{{ base_url | safe }}";
+    </script>
+    <div class="dashboard-container">
+        <div class="header">
+            <div>
+                <h1>Discord Music Bot <span>AI-Enhanced Music & Community Assistant</span></h1>
+            </div>
+            <div class="user-profile">
+                <!-- Placeholder for user profile if authenticated -->
+                <div class="avatar"><i class="fas fa-user"></i></div>
+                <span id="userNameDisplay">Guest User</span>
             </div>
         </div>
 
-        <div class="web-controls">
-            <input type="text" id="queueUrlInput" placeholder="Add YouTube/SoundCloud URL" class="queue-input">
-            <button id="addToQueueBtn" class="add-queue-btn">Add to Queue</button>
-            
-            <div class="control-grid">
-                <button id="playControlBtn" class="web-control-btn bg-blue-600">Play</button>
-                <button id="pauseControlBtn" class="web-control-btn bg-yellow-600">Pause</button>
-                <button id="resumeControlBtn" class="web-control-btn bg-green-600">Resume</button>
-                <button id="skipControlBtn" class="web-control-btn bg-indigo-600">Skip</button>
-                <button id="stopControlBtn" class="web-control-btn bg-red-600">Stop</button>
-                <button id="volumeUpControlBtn" class="web-control-btn bg-gray-600">Vol +</button>
-                <button id="volumeDownControlBtn" class="web-control-btn bg-gray-600">Vol -</button>
+        <div class="navbar">
+            <button class="active"><i class="fas fa-music"></i> Music Player</button>
+            <button><i class="fas fa-chart-bar"></i> Server Stats</button>
+            <button><i class="fas fa-bell"></i> Reminders</button>
+            <button><i class="fas fa-shield-alt"></i> Security</button>
+            <button><i class="fas fa-cog"></i> Settings</button>
+        </div>
+
+        <div class="main-content">
+            <!-- Music Player Section (Left Side) -->
+            <div class="section-card">
+                <h2>Search Music</h2>
+                <div class="search-bar">
+                    <input type="text" id="musicSearchInput" placeholder="Search for songs, artists, or albums...">
+                    <button id="searchMusicBtn"><i class="fas fa-search"></i></button>
+                </div>
+
+                <div class="login-buttons-container" id="authSection">
+                    <!-- Authentication buttons shown based on login status -->
+                    <button class="login-btn discord" id="discordLoginBtn">
+                        <i class="fab fa-discord"></i> Login with Discord
+                    </button>
+                    <button class="login-btn spotify auth-hidden" id="spotifyConnectBtn">
+                        <i class="fab fa-spotify"></i> Connect Spotify
+                    </button>
+                    <div class="login-status-message auth-hidden" id="authStatusMessage"></div>
+                </div>
+
+                <h2>Now Playing</h2>
+                <div class="now-playing-card">
+                    <div class="album-cover">
+                        <img id="coverImage" src="https://placehold.co/400x400/3498db/ffffff?text=No+Music" alt="Album Cover">
+                    </div>
+                    <div class="song-details">
+                        <div class="title" id="songTitle">Welcome to your Music Bot</div>
+                        <div class="artist" id="artistName">Get started by searching for a song</div>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" id="progressBar"></div>
+                    </div>
+                    <div class="time-display">
+                        <span id="currentTime">0:00</span>
+                        <span id="totalTime">0:00</span>
+                    </div>
+                    <div class="player-controls">
+                        <button id="prevBtn"><i class="fas fa-backward"></i></button>
+                        <button class="play-btn" id="playPauseBtn">
+                            <i class="fas fa-play" id="playIcon"></i>
+                            <i class="fas fa-pause auth-hidden" id="pauseIcon"></i>
+                        </button>
+                        <button id="nextBtn"><i class="fas fa-forward"></i></button>
+                        <button id="stopBtn"><i class="fas fa-stop"></i></button>
+                    </div>
+                    <div class="volume-control">
+                        <i class="fas fa-volume-down icon"></i>
+                        <input type="range" class="volume-slider" id="volumeSlider" min="0" max="200" value="100">
+                        <i class="fas fa-volume-up icon"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Queue Section (Right Side) -->
+            <div class="section-card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2>Queue</h2>
+                    <button id="addQueueItemBtn" style="background: var(--primary-purple); border: none; border-radius: 8px; padding: 5px 10px; color: white; cursor: pointer; font-size: 0.8rem;">
+                        <i class="fas fa-plus"></i> Add
+                    </button>
+                </div>
+                <ul class="queue-list" id="queueList">
+                    <!-- Dynamic content will be loaded here -->
+                    <li>
+                        <div class="song-details">
+                            <div class="title">Song Example 1</div>
+                            <div class="artist">Artist 1</div>
+                        </div>
+                        <div class="duration">3:45</div>
+                    </li>
+                    <li>
+                        <div class="song-details">
+                            <div class="title">Song Example 2</div>
+                            <div class="artist">Artist 2</div>
+                        </div>
+                        <div class="duration">4:20</div>
+                    </li>
+                    <li>
+                        <div class="song-details">
+                            <div class="title">Song Example 3</div>
+                            <div class="artist">Artist 3</div>
+                        </div>
+                        <div class="duration">3:12</div>
+                    </li>
+                </ul>
             </div>
         </div>
     </div>
 
+    <div class="flash-messages" id="flashMessages">
+        <!-- Flash messages will be injected here by Flask -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
     <script>
-        // Sample songs data
-        const songs = [
-            {
-                title: "Sunset Dreams",
-                artist: "The Midnight Collective",
-                cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop&crop=center"
-            },
-            {
-                title: "Ocean Waves",
-                artist: "Coastal Vibes",
-                cover: "https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=400&h=400&fit=crop&crop=center"
-            },
-            {
-                title: "City Lights",
-                artist: "Urban Echo",
-                cover: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&h=400&fit=crop&crop=center"
-            },
-            {
-                title: "Forest Path",
-                artist: "Nature's Symphony",
-                cover: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=400&fit=crop&crop=center"
-            },
-            {
-                title: "Neon Nights",
-                artist: "Synthwave Station",
-                cover: "https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=400&h=400&fit=crop&crop=center"
-            }
-        ];
+        // --- DOM Elements ---
+        const authSection = document.getElementById('authSection');
+        const discordLoginBtn = document.getElementById('discordLoginBtn');
+        const spotifyConnectBtn = document.getElementById('spotifyConnectBtn');
+        const authStatusMessage = document.getElementById('authStatusMessage');
+        const userNameDisplay = document.getElementById('userNameDisplay');
 
-        // State variables
-        let currentSongIndex = 0;
-        let isPlaying = false;
-        let progress = 0;
-        let progressInterval;
-
-        // DOM elements
-        const albumArt = document.getElementById('albumArt');
-        const coverImage = document.getElementById('coverImage');
-        const songTitle = document.getElementById('songTitle');
-        const artistName = document.getElementById('artistName');
-        const progressBar = document.getElementById('progressBar');
+        const musicSearchInput = document.getElementById('musicSearchInput');
+        const searchMusicBtn = document.getElementById('searchMusicBtn');
+        
         const playPauseBtn = document.getElementById('playPauseBtn');
         const playIcon = document.getElementById('playIcon');
         const pauseIcon = document.getElementById('pauseIcon');
         const prevBtn = document.getElementById('prevBtn');
         const nextBtn = document.getElementById('nextBtn');
+        const stopBtn = document.getElementById('stopBtn');
         const volumeSlider = document.getElementById('volumeSlider');
+        const addQueueItemBtn = document.getElementById('addQueueItemBtn'); // For the add button next to Queue title
 
-        // Authentication elements
-        const discordLoginBtn = document.getElementById('discordLoginBtn');
-        const spotifyLoginBtn = document.getElementById('spotifyLoginBtn');
-        const userInfo = document.getElementById('userInfo');
-        const userStatus = document.getElementById('userStatus');
+        // Placeholder for song info (bot doesn't send this yet)
+        const songTitle = document.getElementById('songTitle');
+        const artistName = document.getElementById('artistName');
+        const coverImage = document.getElementById('coverImage');
+        const progressBar = document.getElementById('progressBar');
+        const currentTimeDisplay = document.getElementById('currentTime');
+        const totalTimeDisplay = document.getElementById('totalTime');
+        const queueList = document.getElementById('queueList');
 
-        // Music control elements
-        const queueUrlInput = document.getElementById('queueUrlInput');
-        const addToQueueBtn = document.getElementById('addToQueueBtn');
-        const playControlBtn = document.getElementById('playControlBtn');
-        const pauseControlBtn = document.getElementById('pauseControlBtn');
-        const resumeControlBtn = document.getElementById('resumeControlBtn');
-        const skipControlBtn = document.getElementById('skipControlBtn');
-        const stopControlBtn = document.getElementById('stopControlBtn');
-        const volumeUpControlBtn = document.getElementById('volumeUpControlBtn');
-        const volumeDownControlBtn = document.getElementById('volumeDownControlBtn');
+        // --- State Variables ---
+        let isDiscordLinked = false;
+        let isSpotifyLinked = false;
+        let discordUserId = null; // To store the Discord user ID for Spotify linking
+        let isPlaying = false; // Local UI state for play/pause button
+        let playbackProgressInterval = null; // Interval for updating progress bar
+        let currentTrackDuration = 0; // Total duration of current track in ms
+        let currentTrackProgress = 0; // Current progress of current track in ms
 
-        // Utility functions
-        function showFlashMessage(message, type = 'info') {
-            const flashContainer = document.querySelector('.mb-4.mt-2.space-y-2'); // Use the existing container
-            if (!flashContainer) return; // Exit if container doesn't exist
+        // --- Utility Functions ---
 
-            const flashDiv = document.createElement('div');
-            // This line constructs the class name dynamically based on the 'type' parameter
-            flashDiv.className = `flash-message bg-${type}-600`; 
-            flashDiv.textContent = message;
-            flashContainer.appendChild(flashDiv);
-            
-            setTimeout(() => {
-                flashDiv.style.transition = 'opacity 0.5s ease-out';
-                flashDiv.style.opacity = '0';
-                setTimeout(() => flashDiv.remove(), 500);
-            }, 5000);
+        // Helper to format time from milliseconds to MM:SS
+        function formatTime(ms) {
+            const totalSeconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
         }
 
-        // Update song display
-        function updateSongDisplay() {
-            const currentSong = songs[currentSongIndex];
-            songTitle.textContent = currentSong.title;
-            artistName.textContent = currentSong.artist;
-            coverImage.src = currentSong.cover;
-            coverImage.alt = `${currentSong.title} by ${currentSong.artist}`;
-        }
-
-        // Toggle play/pause (for UI animation only)
-        function togglePlayPauseUI() {
-            isPlaying = !isPlaying;
-            
-            if (isPlaying) {
-                playIcon.style.display = 'none';
-                pauseIcon.style.display = 'block';
-                albumArt.classList.add('playing');
-                startProgress();
+        // Update progress bar and time display
+        function updateProgressBarUI() {
+            if (currentTrackDuration > 0) {
+                const progressPercentage = (currentTrackProgress / currentTrackDuration) * 100;
+                progressBar.style.width = `${progressPercentage}%`;
+                currentTimeDisplay.textContent = formatTime(currentTrackProgress);
+                totalTimeDisplay.textContent = formatTime(currentTrackDuration);
             } else {
-                playIcon.style.display = 'block';
-                pauseIcon.style.display = 'none';
-                albumArt.classList.remove('playing');
-                stopProgress();
+                progressBar.style.width = '0%';
+                currentTimeDisplay.textContent = '0:00';
+                totalTimeDisplay.textContent = '0:00';
             }
         }
 
-        // Progress simulation
-        function startProgress() {
-            if (progressInterval) clearInterval(progressInterval);
-            progressInterval = setInterval(() => {
-                progress += 0.5;
-                if (progress >= 100) {
-                    progress = 0;
-                    nextSong();
+        // Function to update local progress state
+        function startProgressInterval() {
+            if (playbackProgressInterval) {
+                clearInterval(playbackProgressInterval);
+            }
+            playbackProgressInterval = setInterval(() => {
+                if (isPlaying && currentTrackProgress < currentTrackDuration) {
+                    currentTrackProgress += 1000; // Increment by 1 second
+                    updateProgressBarUI();
+                } else if (currentTrackProgress >= currentTrackDuration) {
+                    clearInterval(playbackProgressInterval);
+                    // Optionally trigger a new fetch or queue advance here if client-side playback
                 }
-                progressBar.style.width = progress + '%';
-            }, 100);
+            }, 1000);
         }
 
-        function stopProgress() {
-            if (progressInterval) {
-                clearInterval(progressInterval);
-                progressInterval = null;
+        // Function to show/hide elements based on authentication status
+        function updateAuthUI() {
+            if (isDiscordLinked) {
+                discordLoginBtn.classList.add('auth-hidden');
+                spotifyConnectBtn.classList.remove('auth-hidden');
+                authStatusMessage.classList.remove('auth-hidden');
+                // userNameDisplay.textContent = `User ID: ${discordUserId}`; // Display Discord User ID
+                // ^ Commenting this out for now as the screenshot does not show this, and the username is more appropriate if available.
+
+                if (isSpotifyLinked) {
+                    spotifyConnectBtn.classList.add('auth-hidden');
+                    authStatusMessage.textContent = 'เชื่อมต่อ Discord และ Spotify แล้ว';
+                    // Enable music search input and buttons
+                    musicSearchInput.disabled = false;
+                    searchMusicBtn.disabled = false;
+                    playPauseBtn.disabled = false;
+                    prevBtn.disabled = false;
+                    nextBtn.disabled = false;
+                    stopBtn.disabled = false;
+                    volumeSlider.disabled = false;
+                    addQueueItemBtn.disabled = false;
+                } else {
+                    authStatusMessage.textContent = 'เชื่อมต่อ Discord แล้ว (กรุณาเชื่อมต่อ Spotify)';
+                    // Disable music search input and buttons until Spotify is linked
+                    musicSearchInput.disabled = true;
+                    searchMusicBtn.disabled = true;
+                    playPauseBtn.disabled = true;
+                    prevBtn.disabled = true;
+                    nextBtn.disabled = true;
+                    stopBtn.disabled = true;
+                    volumeSlider.disabled = true;
+                    addQueueItemBtn.disabled = false; // Add to queue is allowed even if Spotify not linked
+                }
+            } else {
+                discordLoginBtn.classList.remove('auth-hidden');
+                spotifyConnectBtn.classList.add('auth-hidden');
+                authStatusMessage.classList.add('auth-hidden');
+                authStatusMessage.textContent = '';
+                userNameDisplay.textContent = 'Guest User';
+                // Disable all music controls if not Discord linked
+                musicSearchInput.disabled = true;
+                searchMusicBtn.disabled = true;
+                playPauseBtn.disabled = true;
+                prevBtn.disabled = true;
+                nextBtn.disabled = true;
+                stopBtn.disabled = true;
+                volumeSlider.disabled = true;
+                addQueueItemBtn.disabled = true;
             }
         }
 
-        // Previous song
-        function prevSong() {
-            currentSongIndex = (currentSongIndex - 1 + songs.length) % songs.length;
-            progress = 0;
-            progressBar.style.width = '0%';
-            updateSongDisplay();
-            
-            if (isPlaying) {
-                stopProgress();
-                startProgress();
-            }
-        }
-
-        // Next song
-        function nextSong() {
-            currentSongIndex = (currentSongIndex + 1) % songs.length;
-            progress = 0;
-            progressBar.style.width = '0%';
-            updateSongDisplay();
-            
-            if (isPlaying) {
-                stopProgress();
-                startProgress();
-            }
-        }
-
-        // --- Authentication & Bot Control Logic ---
-
-        // Define Flask-generated URLs here
-        const urls = {
-    getAuthStatus: {{ url_for('get_auth_status') | tojson }},
-    getDiscordUserIdApi: {{ url_for('get_discord_user_id_api') | tojson }},
-    loginDiscord: {{ url_for('login_discord') | tojson }},
-    addWebQueue: {{ url_for('add_web_queue') | tojson }},
-    playWebControl: {{ url_for('play_web_control') | tojson }},
-    pauseWebControl: {{ url_for('pause_web_control') | tojson }},
-    resumeWebControl: {{ url_for('resume_web_control') | tojson }},
-    skipWebControl: {{ url_for('skip_web_control') | tojson }},
-    stopWebControl: {{ url_for('stop_web_control') | tojson }},
-    volumeUpWebControl: {{ url_for('volume_up_web_control') | tojson }},
-    volumeDownWebControl: {{ url_for('volume_down_web_control') | tojson }}
-}
-
-        // Function to fetch authentication status from Flask backend
+        // Function to fetch authentication status from Flask backend API
         async function fetchAuthStatus() {
             try {
-                const response = await fetch(urls.getAuthStatus);
+                const response = await fetch(BASE_URL + 'api/auth_status');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const data = await response.json();
-                return data;
+                isDiscordLinked = data.is_discord_linked;
+                isSpotifyLinked = data.is_spotify_linked;
+                updateAuthUI(); // Update UI based on fetched status
+                
+                // Get Discord User ID for Spotify linking and display
+                if (isDiscordLinked) {
+                    const discordUserResponse = await fetch(BASE_URL + 'api/discord_user_id');
+                    if (!discordUserResponse.ok) throw new Error(`HTTP error! status: ${discordUserResponse.status}`);
+                    const discordUserData = await discordUserResponse.json();
+                    discordUserId = discordUserData.discord_user_id;
+                    userNameDisplay.textContent = `User ID: ${discordUserId}`; // Display Discord User ID
+                }
+
             } catch (error) {
                 console.error('Error fetching auth status:', error);
-                return { is_discord_linked: false, is_spotify_linked: false };
+                // Fallback to not linked if API fails
+                isDiscordLinked = false;
+                isSpotifyLinked = false;
+                updateAuthUI();
+                showFlashMessage('Error fetching connection status.', 'error');
             }
         }
 
-        // Function to fetch Discord User ID from Flask backend
-        async function fetchDiscordUserId() {
+        // Function to fetch and update "Now Playing" data
+        async function fetchNowPlayingData() {
             try {
-                const response = await fetch(urls.getDiscordUserIdApi);
+                const response = await fetch(BASE_URL + 'api/now_playing_data');
                 const data = await response.json();
-                return data.discord_user_id;
-            } catch (error) {
-                console.error('Error fetching Discord User ID:', error);
-                return null;
-            }
-        }
 
-        // Update UI based on authentication status
-        async function updateAuthUI() {
-            const { is_discord_linked, is_spotify_linked } = await fetchAuthStatus();
-            const discordUserId = await fetchDiscordUserId();
-
-            if (is_discord_linked) {
-                discordLoginBtn.style.display = 'none';
-                spotifyLoginBtn.style.display = 'flex';
-                // Update Spotify login button link if Discord is linked
-                if (discordUserId) {
-                    // This URL is constructed client-side as it depends on a dynamic ID
-                    spotifyLoginBtn.href = `/login/spotify/${discordUserId}`;
-                }
-
-                if (is_spotify_linked) {
-                    spotifyLoginBtn.style.display = 'none';
-                    userInfo.style.display = 'flex';
-                    userStatus.textContent = 'Discord & Spotify Connected';
+                if (data.status === 'playing_spotify' || data.status === 'playing_youtube') {
+                    songTitle.textContent = data.title;
+                    artistName.textContent = data.artist;
+                    coverImage.src = data.album_cover_url;
+                    currentTrackDuration = data.duration_ms;
+                    currentTrackProgress = data.progress_ms; // Spotify provides actual progress
+                    isPlaying = true;
+                    playIcon.classList.add('auth-hidden');
+                    pauseIcon.classList.remove('auth-hidden');
+                    startProgressInterval(); // Start updating local progress bar
                 } else {
-                    userInfo.style.display = 'none'; // Hide if Spotify not linked
-                }
-            } else {
-                discordLoginBtn.style.display = 'flex';
-                discordLoginBtn.href = urls.loginDiscord; // Set Discord login URL
-                spotifyLoginBtn.style.display = 'none';
-                userInfo.style.display = 'none';
-            }
-        }
-
-        // Generic function to send control commands to bot via Flask backend
-        async function sendControlCommand(url, method = 'GET', body = null) {
-            try {
-                const options = { method: method };
-                if (body) {
-                    options.body = body instanceof FormData ? body : JSON.stringify(body);
-                    if (!(body instanceof FormData)) {
-                        options.headers = { 'Content-Type': 'application/json' };
+                    songTitle.textContent = 'Welcome to your Music Bot';
+                    artistName.textContent = 'Get started by searching for a song';
+                    coverImage.src = 'https://placehold.co/400x400/3498db/ffffff?text=No+Music';
+                    isPlaying = false;
+                    playIcon.classList.remove('auth-hidden');
+                    pauseIcon.classList.add('auth-hidden');
+                    currentTrackDuration = 0;
+                    currentTrackProgress = 0;
+                    if (playbackProgressInterval) {
+                        clearInterval(playbackProgressInterval);
+                        playbackProgressInterval = null;
                     }
                 }
-                const response = await fetch(url, options);
-                // No need to parse response if we're reloading the page anyway
-                // Reload page to show flash messages or handle response
-                window.location.reload(); 
+                updateProgressBarUI();
             } catch (error) {
-                console.error('Error sending control command:', error);
-                showFlashMessage('Error performing action.', 'error');
+                console.error('Error fetching now playing data:', error);
+                // Do not show a flash message here, as it would be too frequent on continuous errors.
             }
         }
 
-        // Event listeners for UI controls
-        playPauseBtn.addEventListener('click', togglePlayPauseUI);
-        prevBtn.addEventListener('click', prevSong);
-        nextBtn.addEventListener('click', nextSong);
+        // Function to fetch and update Queue data
+        async function fetchQueueData() {
+            try {
+                const response = await fetch(BASE_URL + 'api/queue_data');
+                const data = await response.json();
 
-        // Volume control
-        volumeSlider.addEventListener('input', (e) => {
-            const volume = e.target.value;
-            // This is UI only. Actual bot volume control is via web_control/volume_up/down buttons.
-            console.log('UI Volume set to:', volume + '%');
+                queueList.innerHTML = ''; // Clear existing queue items
+                if (data.queue && data.queue.length > 0) {
+                    data.queue.forEach(item => {
+                        const listItem = document.createElement('li');
+                        // For simplicity, display URL. In a real app, you might fetch metadata.
+                        listItem.innerHTML = `
+                            <div class="song-details">
+                                <div class="title">${item}</div>
+                                <div class="artist"></div>
+                            </div>
+                            <div class="duration"></div>
+                        `;
+                        queueList.appendChild(listItem);
+                    });
+                } else {
+                    queueList.innerHTML = '<li><div class="song-details"><div class="title">Queue is empty</div></div></li>';
+                }
+            } catch (error) {
+                console.error('Error fetching queue data:', error);
+            }
+        }
+
+
+        // Function to display flash messages
+        function showFlashMessage(message, category) {
+            const flashMessagesContainer = document.getElementById('flashMessages');
+            const flashDiv = document.createElement('div');
+            flashDiv.className = `flash-message ${category}`;
+            flashDiv.textContent = message;
+            flashMessagesContainer.appendChild(flashDiv);
+
+            setTimeout(() => {
+                flashDiv.style.animation = 'fadeOut 0.5s ease-out forwards';
+                flashDiv.addEventListener('animationend', () => flashDiv.remove());
+            }, 5000); // Message stays for 5 seconds
+        }
+
+
+        // --- Event Listeners ---
+
+        // Discord Login Button
+        discordLoginBtn.addEventListener('click', () => {
+            window.location.href = BASE_URL + "login/discord";
         });
 
-        // Progress bar click
-        document.querySelector('.progress-container').addEventListener('click', (e) => {
-            const rect = e.target.getBoundingClientRect();
-            const clickX = e.clientX - rect.left;
-            const newProgress = (clickX / rect.width) * 100;
-            progress = Math.max(0, Math.min(100, newProgress));
-            progressBar.style.width = progress + '%';
-        });
-
-        // Keyboard controls
-        document.addEventListener('keydown', (e) => {
-            switch(e.code) {
-                case 'Space':
-                    e.preventDefault();
-                    togglePlayPauseUI();
-                    break;
-                case 'ArrowLeft':
-                    prevSong();
-                    break;
-                case 'ArrowRight':
-                    nextSong();
-                    break;
+        // Spotify Connect Button
+        spotifyConnectBtn.addEventListener('click', () => {
+            if (isDiscordLinked && discordUserId) {
+                window.location.href = BASE_URL + `login/spotify/${discordUserId}`;
+            } else {
+                showFlashMessage('Please log in with Discord first to connect Spotify.', 'error');
+                console.error('Spotify connect attempt before Discord login or missing Discord User ID.');
             }
         });
 
-        // Web control event listeners (actual bot control)
-        addToQueueBtn.addEventListener('click', async () => {
-            const url = queueUrlInput.value.trim();
+        // Search Music Button (for Spotify via /play command)
+        searchMusicBtn.addEventListener('click', async () => {
+            const query = musicSearchInput.value.trim();
+            if (query) {
+                // In a real app, you would send this search query to your backend
+                // which then relays it to Discord bot's /play command.
+                // For this setup, we'll simulate it with a fetch to trigger the bot's play command.
+                // This is a simplified example.
+                try {
+                    const response = await fetch(BASE_URL + 'web_control/search_play', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ query: query })
+                    });
+                    const result = await response.json();
+                    if (response.ok) {
+                        showFlashMessage(result.message, 'success');
+                    } else {
+                        showFlashMessage(result.message || 'Error searching music.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error sending search query:', error);
+                    showFlashMessage('Failed to send search query. Please try again.', 'error');
+                }
+                musicSearchInput.value = '';
+            } else {
+                showFlashMessage('กรุณาป้อนชื่อเพลง ศิลปิน หรืออัลบั้มเพื่อค้นหา.', 'info');
+            }
+        });
+
+        // Play/Pause Button
+        playPauseBtn.addEventListener('click', async () => {
+            if (isPlaying) {
+                await fetch(BASE_URL + 'web_control/pause');
+            } else {
+                await fetch(BASE_URL + 'web_control/resume');
+            }
+            // Fetch latest status to update UI immediately
+            await fetchNowPlayingData();
+        });
+
+        // Previous Button
+        prevBtn.addEventListener('click', async () => {
+            await fetch(BASE_URL + 'web_control/skip_previous'); // Assuming a skip_previous route exists or skip next
+            await fetchNowPlayingData();
+        });
+
+        // Next Button
+        nextBtn.addEventListener('click', async () => {
+            await fetch(BASE_URL + 'web_control/skip');
+            await fetchNowPlayingData();
+        });
+
+        // Stop Button
+        stopBtn.addEventListener('click', async () => {
+            await fetch(BASE_URL + 'web_control/stop');
+            await fetchNowPlayingData();
+            await fetchQueueData(); // Also update queue as it's cleared on stop
+        });
+
+        // Volume Slider
+        volumeSlider.addEventListener('input', async () => {
+            const volume = volumeSlider.value;
+            // Assuming you want to map 0-200 to 0.0-2.0 or 0-100%
+            // The bot uses 0.1 to 2.0, so maybe map 0-200 to 0.1-2.0
+            const mappedVolume = volume / 100; // Maps 0-200 to 0-2.0
+            
+            // This would require a dedicated endpoint in Flask
+            // For now, let's just send the value and the bot logic will handle it
+            try {
+                // You'll need a new Flask route for setting exact volume
+                // e.g., /web_control/set_volume?vol=1.5
+                await fetch(`${BASE_URL}web_control/set_volume?vol=${mappedVolume}`);
+            } catch (error) {
+                console.error("Error setting volume:", error);
+            }
+        });
+
+        // Add to Queue button next to "Queue" title
+        addQueueItemBtn.addEventListener('click', () => {
+            const url = prompt("กรุณาป้อน YouTube/SoundCloud URL ที่จะเพิ่มเข้าคิว:");
             if (url) {
                 const formData = new FormData();
-                formData.append('url', url);
-                await sendControlCommand(urls.addWebQueue, 'POST', formData);
-                queueUrlInput.value = ''; // Clear input after adding
-            } else {
-                showFlashMessage('Please enter a URL to add to the queue.', 'error');
+                formData.append('url', url.trim());
+                fetch(BASE_URL + 'web_control/add', {
+                    method: 'POST',
+                    body: formData
+                }).then(response => {
+                    if (response.ok) {
+                        showFlashMessage('เพิ่มลงคิวแล้ว!', 'success');
+                        fetchQueueData(); // Refresh queue display
+                        fetchNowPlayingData(); // Check if playback started
+                    } else {
+                        showFlashMessage('ไม่สามารถเพิ่มลงในคิวได้ กรุณาลองใหม่.', 'error');
+                    }
+                }).catch(error => {
+                    console.error('Error adding to queue:', error);
+                    showFlashMessage('ไม่สามารถเพิ่มลงในคิวได้ กรุณาลองใหม่.', 'error');
+                });
             }
         });
 
-        playControlBtn.addEventListener('click', () => sendControlCommand(urls.playWebControl));
-        pauseControlBtn.addEventListener('click', () => sendControlCommand(urls.pauseWebControl));
-        resumeControlBtn.addEventListener('click', () => sendControlCommand(urls.resumeWebControl));
-        skipControlBtn.addEventListener('click', () => sendControlCommand(urls.skipWebControl));
-        stopControlBtn.addEventListener('click', () => sendControlCommand(urls.stopWebControl));
-        volumeUpControlBtn.addEventListener('click', () => sendControlCommand(urls.volumeUpWebControl));
-        volumeDownControlBtn.addEventListener('click', () => sendControlCommand(urls.volumeDownWebControl));
 
+        // --- Initial Setup and Periodic Updates ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Initial fetch of auth status
+            await fetchAuthStatus();
+            // Initial fetch of now playing and queue data
+            await fetchNowPlayingData();
+            await fetchQueueData();
 
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            updateSongDisplay();
-            updateAuthUI(); // Call to update UI based on auth status
-            
-            // Fade out Flask-rendered flash messages
-            const flashMessages = document.querySelectorAll('.flash-message');
-            flashMessages.forEach(msg => {
+            // Set up periodic updates for now playing and queue data
+            setInterval(fetchNowPlayingData, 5000); // Every 5 seconds
+            setInterval(fetchQueueData, 10000); // Every 10 seconds
+
+            // Auto-hide Flask flash messages (if any rendered by Jinja)
+            document.querySelectorAll('.flash-message').forEach(flashDiv => {
                 setTimeout(() => {
-                    msg.style.opacity = '0';
-                    setTimeout(() => msg.remove(), 500); // Remove after transition
-                }, 5000); // Messages disappear after 5 seconds
+                    flashDiv.style.animation = 'fadeOut 0.5s ease-out forwards';
+                    flashDiv.addEventListener('animationend', () => flashDiv.remove());
+                }, 5000); // Message stays for 5 seconds
             });
+
+            // Handle initial state of play/pause button based on fetched data
+            updateProgressBarUI();
         });
     </script>
 </body>
