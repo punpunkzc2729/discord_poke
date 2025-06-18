@@ -624,8 +624,10 @@ async def speak(interaction: discord.Interaction, message: str, lang: str = 'en'
         await asyncio.to_thread(gTTS(message, lang=lang).save, tts_filename)
         
         source = discord.FFmpegPCMAudio(tts_filename, executable="ffmpeg")
+        
         # Use bot.loop to run the callback in the bot's main thread
-        voice_client.play(source, after=lambda e: asyncio.run_coroutine_threadsafe(cleanup_audio(e, tts_filename), bot.loop))
+        voice_client.play(source, after=lambda e: asyncio.run_coroutine_threadsafe(
+            cleanup_audio(e, tts_filename), bot.loop))
         
         await interaction.followup.send(f"🗣️ Speaking: **{message}** (Language: {lang})")
 
@@ -853,13 +855,31 @@ async def index():
             logging.error(f"Error checking Spotify link status for web user {discord_user_id}: {e}")
             is_spotify_linked = False
 
+    # Get environment variables for Firebase, APP_ID, and Auth Token
+    # Use .get() with a default value to prevent errors if variables are not set
+    # firebaseConfig should be JSON parsed from the string provided by the environment
+    firebase_config_str = os.getenv("FIREBASE_CONFIG")
+    firebase_config = {}
+    if firebase_config_str:
+        try:
+            firebase_config = json.loads(firebase_config_str)
+        except json.JSONDecodeError as e:
+            logging.error(f"Error decoding FIREBASE_CONFIG: {e}", exc_info=True)
+            firebase_config = {} # Fallback to empty dict
+
+    app_id_env = os.getenv("APP_ID", "default-app-id-from-env") # Fallback for APP_ID
+    initial_auth_token = os.getenv("INITIAL_AUTH_TOKEN", None) # Fallback for token
+
     return render_template(
         "index.html",
         is_discord_linked=is_discord_linked,
         discord_user_id=discord_user_id,
         discord_username=discord_username,
         is_spotify_linked=is_spotify_linked,
-        base_url=request.url_root # Pass base_url to the template
+        base_url=request.url_root, # Pass base_url to the template
+        firebase_config=firebase_config, # Pass Firebase config
+        app_id=app_id_env, # Pass app ID
+        initial_auth_token=initial_auth_token # Pass initial auth token
     )
 
 
