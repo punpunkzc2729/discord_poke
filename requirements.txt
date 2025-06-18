@@ -1,12 +1,12 @@
-discord.py
-Flask[async]==2.3.3 
-gTTS
-python-dotenv
-spotipy
-httpx
+discord.py==2.3.2
+Flask[async]==3.0.3
+gTTS==2.4.0
+python-dotenv==1.0.0
+spotipy==2.22.1
+httpx==0.27.0
 PyNaCl
 gunicorn
-Werkzeug==2.3.8
-yt-dlp
+Werkzeug==3.0.3
+yt-dlp==2023.10.13
 boto3
-firebase-admin==6.2.0 # เพิ่มบรรทัดนี้
+firebase-admin==6.2.0

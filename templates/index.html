@@ -7,19 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
-        :root {
-            --bg-gradient-start: #2a0050;
-            --bg-gradient-end: #0a001a;
-            --card-bg: rgba(255, 255, 255, 0.05);
-            --card-border: rgba(255, 255, 255, 0.1);
-            --text-light: #e0e0e0;
-            --text-lighter: #f0f0f0;
-            --primary-purple: #7289da; /* Discord purple */
-            --spotify-green: #1DB954;
-            --accent-gradient-start: #8a2be2; /* BlueViolet */
-            --accent-gradient-end: #4b0082; /* Indigo */
-        }
-
+        /* Basic Reset & Font */
         * {
             margin: 0;
             padding: 0;
@@ -27,14 +15,33 @@
             font-family: 'Inter', sans-serif;
         }
 
+        /* Color Variables (from Tailwind/Shadcn UI inspiration) */
+        :root {
+            --background: #1a1a2e; /* Dark background */
+            --foreground: #e0e0e0; /* Light text */
+            --card-bg: rgba(255, 255, 255, 0.08); /* Transparent dark card */
+            --card-border: rgba(255, 255, 255, 0.15);
+            --primary-purple: #7289da; /* Discord purple */
+            --primary-purple-dark: #5b6ecd;
+            --spotify-green: #1DB954;
+            --spotify-green-dark: #1aa34a;
+            --accent-blue: #4a90e2;
+            --accent-red: #e74c3c;
+            --gray-700: #374151;
+            --gray-600: #4b5563;
+            --gray-400: #9ca3af;
+            --gray-200: #e5e7eb;
+            --text-white: #ffffff;
+        }
+
         body {
-            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            background: linear-gradient(135deg, #2A0050 0%, #0A001A 100%);
             min-height: 100vh;
             display: flex;
-            align-items: center;
+            align-items: flex-start; /* Align to top */
             justify-content: center;
-            padding: 20px;
-            color: var(--text-light);
+            padding: 30px 20px; /* More padding top/bottom */
+            color: var(--foreground);
             overflow-x: hidden;
         }
 
@@ -43,329 +50,733 @@
             flex-direction: column;
             width: 100%;
             max-width: 1200px;
-            background: var(--card-bg);
+            background: rgba(255, 255, 255, 0.05); /* Lighter transparency for main container */
             border-radius: 20px;
             border: 1px solid var(--card-border);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            gap: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(15px); /* Stronger blur */
+            padding: 30px;
+            gap: 25px;
         }
 
-        .header {
+        .header-section {
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: space-between;
-            padding-bottom: 20px;
+            padding-bottom: 25px;
             border-bottom: 1px solid var(--card-border);
         }
-
-        .header h1 {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: var(--text-lighter);
+        @media (min-width: 768px) {
+            .header-section {
+                flex-direction: row;
+            }
         }
 
-        .header h1 span {
-            font-size: 1rem;
-            opacity: 0.7;
-            display: block;
-            font-weight: 400;
-        }
-
-        .header .user-profile {
+        .header-content {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        @media (min-width: 768px) {
+            .header-content {
+                margin-bottom: 0;
+            }
         }
 
-        .header .user-profile .avatar {
-            width: 40px;
-            height: 40px;
+        .bot-icon-container {
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
-            background: var(--primary-purple);
+            background-color: var(--primary-purple);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2rem;
-            color: white;
-            opacity: 0.8;
+            font-size: 2rem;
+            color: var(--text-white);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         }
 
-        .navbar {
+        .header-title h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-white);
+            margin-bottom: 5px;
+        }
+
+        .header-title p {
+            font-size: 1.1rem;
+            color: var(--gray-400);
+        }
+
+        .user-auth-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        @media (min-width: 768px) {
+            .user-auth-section {
+                flex-direction: row;
+            }
+        }
+
+        .user-auth-section .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1rem;
+            color: var(--gray-200);
+        }
+
+        .user-auth-section .user-info .user-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background-color: var(--gray-700);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray-400);
+            font-size: 1rem;
+        }
+
+        /* Nav Tabs */
+        .nav-tabs {
             display: flex;
             background: var(--card-bg);
             border-radius: 15px;
             padding: 10px;
             gap: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             overflow-x: auto;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
 
-        .navbar button {
+        .nav-tabs button {
             background: transparent;
             border: none;
-            color: var(--text-light);
-            padding: 10px 20px;
+            color: var(--gray-400);
+            padding: 12px 22px;
             border-radius: 10px;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 1rem;
             font-weight: 500;
-            transition: background 0.3s ease, color 0.3s ease;
+            transition: all 0.3s ease;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             white-space: nowrap;
         }
 
-        .navbar button.active,
-        .navbar button:hover {
-            background: rgba(255, 255, 255, 0.15);
-            color: var(--text-lighter);
+        .nav-tabs button.active {
+            background: linear-gradient(90deg, #8A2BE2, #A020F0); /* Purple gradient for active tab */
+            color: var(--text-white);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         }
 
-        .main-content {
+        .nav-tabs button:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--gray-200);
+        }
+
+        /* Main Content Grid */
+        .main-content-grid {
             display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+        @media (min-width: 992px) {
+            .main-content-grid {
+                grid-template-columns: 2fr 1fr;
+            }
         }
 
+        /* Section Cards */
         .section-card {
             background: var(--card-bg);
             border-radius: 15px;
             border: 1px solid var(--card-border);
-            padding: 25px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
             display: flex;
             flex-direction: column;
             gap: 20px;
         }
 
         .section-card h2 {
-            font-size: 1.4rem;
-            font-weight: 600;
-            color: var(--text-lighter);
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--gray-200);
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .search-bar {
+        /* Search Bar */
+        .search-bar-container {
             display: flex;
             gap: 10px;
-            margin-top: 15px;
-            align-items: center;
+            width: 100%;
         }
 
-        .search-bar input {
+        .search-bar-container input {
             flex-grow: 1;
             padding: 12px 15px;
             border-radius: 10px;
-            border: 1px solid var(--card-border);
-            background: rgba(0, 0, 0, 0.2);
-            color: var(--text-lighter);
+            border: 1px solid var(--gray-600);
+            background: var(--gray-700);
+            color: var(--text-white);
             font-size: 1rem;
             outline: none;
-            transition: border-color 0.3s ease;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
-        .search-bar input::placeholder {
-            color: rgba(255, 255, 255, 0.6);
+        .search-bar-container input::placeholder {
+            color: var(--gray-400);
         }
 
-        .search-bar input:focus {
+        .search-bar-container input:focus {
             border-color: var(--primary-purple);
+            box-shadow: 0 0 0 3px rgba(114, 137, 218, 0.3);
         }
 
-        .search-bar button {
+        /* General Buttons */
+        .btn {
             background: var(--primary-purple);
+            color: var(--text-white);
             border: none;
+            padding: 12px 25px;
             border-radius: 10px;
-            padding: 12px 15px;
-            cursor: pointer;
-            transition: background 0.3s ease;
-            color: white;
             font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none; /* For links styled as buttons */
+        }
+        .btn:hover {
+            background: var(--primary-purple-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
-        .search-bar button:hover {
-            background: #5b6ecd;
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--primary-purple);
+            color: var(--primary-purple);
+        }
+        .btn-outline:hover {
+            background: rgba(114, 137, 218, 0.1);
+            color: var(--text-white);
         }
 
-        /* Now Playing section */
-        .now-playing-card .album-cover {
+        .btn-green {
+            background: var(--spotify-green);
+        }
+        .btn-green:hover {
+            background: var(--spotify-green-dark);
+        }
+
+        .btn-icon {
+            padding: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .btn-icon:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .btn-icon.main-control {
+            width: 60px;
+            height: 60px;
+            font-size: 1.8rem;
+        }
+        .btn-icon.main-control.active {
+            background: var(--primary-purple);
+        }
+        .btn-icon.main-control.active:hover {
+            background: var(--primary-purple-dark);
+        }
+
+        .btn-small-icon {
+            padding: 6px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--gray-700);
+            color: var(--gray-200);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        .btn-small-icon:hover {
+            background: var(--gray-600);
+        }
+        .btn-small-icon.active {
+            color: var(--primary-purple); /* Active color for shuffle/repeat */
+        }
+        .btn-small-icon.red {
+            background: var(--accent-red);
+            color: var(--text-white);
+        }
+        .btn-small-icon.red:hover {
+            background: rgba(231, 76, 60, 0.8);
+        }
+
+
+        /* Search Results List */
+        .search-results-list {
+            list-style: none;
+            padding: 0;
+            max-height: 250px;
+            overflow-y: auto;
+            margin-top: 20px;
+            padding-right: 10px; /* For scrollbar */
+        }
+        .search-results-list li {
+            display: flex;
+            align-items: center;
+            background: var(--gray-700);
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            transition: background 0.2s ease;
+        }
+        .search-results-list li:hover {
+            background: var(--gray-600);
+        }
+        .search-results-list li img {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        .search-results-list li .song-info {
+            flex-grow: 1;
+        }
+        .search-results-list li .song-info p {
+            margin: 0;
+            line-height: 1.3;
+        }
+        .search-results-list li .song-info .title {
+            font-weight: 600;
+            color: var(--text-white);
+            font-size: 1.1rem;
+        }
+        .search-results-list li .song-info .artist {
+            color: var(--gray-400);
+            font-size: 0.9rem;
+        }
+
+        /* Now Playing */
+        .now-playing-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            min-height: 300px; /* Ensure consistent height */
+            justify-content: center;
+        }
+        .now-playing-content img {
             width: 180px;
             height: 180px;
             border-radius: 15px;
-            margin: 0 auto 15px;
-            overflow: hidden;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
-            background-color: #333; /* Placeholder background */
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            margin-bottom: 25px;
+        }
+        .now-playing-content .title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--text-white);
+            margin-bottom: 5px;
+        }
+        .now-playing-content .artist {
+            font-size: 1.2rem;
+            color: var(--gray-400);
+            margin-bottom: 25px;
+        }
+        .now-playing-placeholder {
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            color: #ccc;
-            font-size: 0.9rem;
+            height: 100%; /* Take full height of parent */
+            padding: 20px;
             text-align: center;
         }
-
-        .now-playing-card .album-cover img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        .now-playing-placeholder .icon {
+            font-size: 4rem;
+            color: var(--primary-purple);
+            margin-bottom: 20px;
+        }
+        .now-playing-placeholder h3 {
+            font-size: 1.8rem;
+            color: var(--gray-200);
+            margin-bottom: 10px;
+        }
+        .now-playing-placeholder p {
+            color: var(--gray-400);
+            font-size: 1rem;
         }
 
-        .now-playing-card .song-details {
-            text-align: center;
-            margin-bottom: 15px;
-        }
 
-        .now-playing-card .song-details .title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--text-lighter);
-        }
-
-        .now-playing-card .song-details .artist {
-            font-size: 0.9rem;
-            opacity: 0.8;
-        }
-
-        .progress-bar-container {
-            width: 100%;
-            background: rgba(255, 255, 255, 0.1);
-            height: 5px;
+        /* Progress Bar */
+        .progress-container {
+            width: 90%; /* Smaller width for better aesthetics */
+            height: 6px;
+            background: var(--gray-700);
             border-radius: 3px;
+            margin-bottom: 10px;
             overflow: hidden;
-            margin: 10px 0;
         }
-
-        .progress-bar-fill {
+        .progress-bar {
             height: 100%;
-            width: 0%; /* Will be updated by JS */
-            background: linear-gradient(90deg, #ff6b6b, #feca57);
+            width: 0%;
+            background: linear-gradient(90deg, #A020F0, #D8BFD8); /* Lighter purple gradient */
             border-radius: 3px;
-            transition: width 0.1s linear; /* Smooth progress bar movement */
+            transition: width 0.1s linear;
         }
-
-        .time-display {
+        .time-labels {
             display: flex;
             justify-content: space-between;
-            font-size: 0.8rem;
-            opacity: 0.7;
-            margin-bottom: 15px;
+            width: 90%; /* Match progress container width */
+            font-size: 0.85rem;
+            color: var(--gray-400);
+            margin-bottom: 30px;
         }
 
-        .player-controls {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .player-controls button {
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            border-radius: 50%;
-            width: 45px;
-            height: 45px;
+        /* Player Controls */
+        .player-controls-group {
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            transition: background 0.3s ease, transform 0.2s ease;
-            color: var(--text-lighter);
-        }
-        
-        .player-controls button:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-2px);
+            gap: 20px;
+            margin-bottom: 30px;
         }
 
-        .player-controls button .icon {
-            font-size: 1.2rem;
-        }
-
-        .player-controls .play-btn {
-            background: var(--primary-purple);
-            width: 60px;
-            height: 60px;
-        }
-
-        .player-controls .play-btn:hover {
-            background: #5b6ecd;
-        }
-
-        .volume-control {
+        /* Volume Control */
+        .volume-control-group {
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 10px;
-            margin-top: 20px;
-            justify-content: center;
+            width: 80%;
+            max-width: 300px;
+            margin: 0 auto;
         }
-
-        .volume-control .icon {
-            font-size: 1.1rem;
-            opacity: 0.8;
-        }
-
         .volume-slider {
-            width: 150px;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 2px;
+            width: 100%;
+            height: 6px;
+            background: var(--gray-700);
+            border-radius: 3px;
             outline: none;
             -webkit-appearance: none;
             appearance: none;
         }
-
         .volume-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 14px;
-            height: 14px;
-            background: var(--text-lighter);
+            width: 16px;
+            height: 16px;
+            background: var(--primary-purple);
             border-radius: 50%;
             cursor: pointer;
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            transition: background 0.2s ease;
+        }
+        .volume-slider::-webkit-slider-thumb:hover {
+            background: var(--primary-purple-dark);
         }
 
-        /* Queue Section */
+        /* Queue List */
+        .queue-list-container {
+            flex-grow: 1; /* Allow it to take available space */
+            max-height: 400px; /* Max height for scroll */
+            overflow-y: auto;
+            padding-right: 10px; /* Space for scrollbar */
+        }
         .queue-list {
+            list-style: none;
+            padding: 0;
+        }
+        .queue-list li {
+            display: flex;
+            align-items: center;
+            background: var(--gray-700);
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            transition: background 0.2s ease;
+        }
+        .queue-list li:hover {
+            background: var(--gray-600);
+        }
+        .queue-list li .queue-index {
+            font-family: 'monospace';
+            font-size: 1rem;
+            color: var(--gray-400);
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        .queue-list li img {
+            width: 45px;
+            height: 45px;
+            border-radius: 8px;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        .queue-list li .song-info {
+            flex-grow: 1;
+        }
+        .queue-list li .song-info p {
+            margin: 0;
+            line-height: 1.3;
+        }
+        .queue-list li .song-info .title {
+            font-weight: 600;
+            color: var(--text-white);
+            font-size: 1rem;
+        }
+        .queue-list li .song-info .artist {
+            color: var(--gray-400);
+            font-size: 0.85rem;
+        }
+        .queue-list li .remove-btn {
+            margin-left: 15px;
+            cursor: pointer;
+        }
+
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            transition: background 0.3s ease;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* AI Chat Assistant */
+        .chat-history {
+            background: var(--gray-700);
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding-right: 10px; /* For scrollbar */
+        }
+        .chat-message {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+        .chat-message .avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: var(--primary-purple);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+        .chat-message.bot .avatar {
+            background-color: var(--accent-blue);
+        }
+        .chat-message .message-content {
+            background: var(--gray-600);
+            padding: 10px 15px;
+            border-radius: 15px;
+            max-width: 80%;
+            word-wrap: break-word;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+        .chat-message.user .message-content {
+            background: var(--primary-purple);
+            align-self: flex-end; /* Align user messages to right */
+            margin-left: auto;
+        }
+        .chat-message.bot .message-content {
+            background: var(--gray-600);
+        }
+
+        .chat-input-form {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .chat-input-form input {
+            flex-grow: 1;
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: 1px solid var(--gray-600);
+            background: var(--gray-700);
+            color: var(--text-white);
+            font-size: 1rem;
+            outline: none;
+        }
+        .chat-input-form button {
+            padding: 12px 20px;
+            background: var(--primary-purple);
+            color: white;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        .chat-input-form button:hover {
+            background: var(--primary-purple-dark);
+        }
+        .thinking-indicator {
+            text-align: center;
+            color: var(--gray-400);
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+        /* Reminders */
+        .reminders-list {
             list-style: none;
             padding: 0;
             max-height: 300px;
             overflow-y: auto;
+            padding-right: 10px;
         }
-
-        .queue-list li {
+        .reminders-list li {
+            background: var(--gray-700);
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--gray-200);
+        }
+        .reminders-list li .reminder-info {
+            flex-grow: 1;
+        }
+        .reminders-list li .reminder-text {
+            font-weight: 600;
+            font-size: 1.05rem;
+        }
+        .reminders-list li .reminder-time {
             font-size: 0.9rem;
+            color: var(--gray-400);
         }
-
-        .queue-list li:last-child {
-            border-bottom: none;
+        .reminders-list li .delete-btn {
+            margin-left: 15px;
+            background: var(--accent-red);
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
         }
-
-        .queue-list li .song-details {
+        .reminders-list li .delete-btn:hover {
+            background: rgba(231, 76, 60, 0.8);
+        }
+        .reminder-form {
             display: flex;
             flex-direction: column;
-            text-align: left;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .reminder-form input[type="text"],
+        .reminder-form input[type="time"] {
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: 1px solid var(--gray-600);
+            background: var(--gray-700);
+            color: var(--text-white);
+            font-size: 1rem;
+            outline: none;
+        }
+        .reminder-form button {
+            width: 100%;
         }
 
-        .queue-list li .song-details .title {
-            color: var(--text-lighter);
-            font-weight: 500;
+        /* Security Alerts */
+        .security-alerts-list {
+            list-style: none;
+            padding: 0;
         }
-
-        .queue-list li .song-details .artist {
+        .security-alerts-list li {
+            background: rgba(231, 76, 60, 0.2); /* Reddish background for alerts */
+            border: 1px solid var(--accent-red);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            color: var(--gray-200);
+            font-size: 0.95rem;
+        }
+        .security-alerts-list li .alert-type {
+            font-weight: 600;
+            color: var(--accent-red);
+            margin-bottom: 5px;
+            display: block;
+        }
+        .security-alerts-list li .alert-message {
+            margin-bottom: 5px;
+        }
+        .security-alerts-list li .alert-timestamp {
             font-size: 0.8rem;
-            opacity: 0.7;
+            color: var(--gray-400);
+            font-style: italic;
         }
 
-        .queue-list li .duration {
-            opacity: 0.7;
+        /* Settings Placeholder */
+        .settings-placeholder {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
         }
+        .settings-placeholder .icon {
+            font-size: 4rem;
+            color: var(--gray-500);
+            margin-bottom: 20px;
+        }
+        .settings-placeholder h3 {
+            font-size: 1.8rem;
+            color: var(--gray-200);
+            margin-bottom: 10px;
+        }
+        .settings-placeholder p {
+            color: var(--gray-400);
+            font-size: 1rem;
+        }
+
 
         /* Flash Messages */
         .flash-messages {
@@ -400,238 +811,305 @@
             from { opacity: 1; transform: translateY(0); }
             to { opacity: 0; transform: translateY(-20px); }
         }
-        
-        /* Hidden elements for authenticated state */
-        .auth-hidden {
-            display: none !important;
-        }
 
-        /* Login buttons */
-        .login-buttons-container {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            align-items: center;
-        }
-
-        .login-btn {
-            background: var(--primary-purple);
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 10px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.3s ease, transform 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            width: fit-content;
-        }
-
-        .login-btn.spotify {
-            background: var(--spotify-green);
-        }
-
-        .login-btn:hover {
-            transform: translateY(-2px);
-        }
-
-        .login-btn.spotify:hover {
-            background: #1aa34a;
-        }
-        .login-btn.discord:hover {
-            background: #5b6ecd;
-        }
-
-        .login-status-message {
-            font-size: 0.9rem;
-            opacity: 0.8;
-            text-align: center;
-        }
-
-        /* Media Queries for responsiveness */
+        /* Responsive Adjustments */
         @media (max-width: 768px) {
-            .main-content {
-                grid-template-columns: 1fr;
+            body {
+                padding: 20px 10px;
             }
             .dashboard-container {
-                padding: 15px;
+                padding: 20px;
             }
-            .header h1 {
-                font-size: 1.5rem;
+            .header-title h1 {
+                font-size: 2rem;
             }
-            .header h1 span {
-                font-size: 0.8rem;
+            .header-title p {
+                font-size: 1rem;
+            }
+            .nav-tabs button {
+                padding: 10px 15px;
+                font-size: 0.9rem;
+            }
+            .main-content-grid {
+                grid-template-columns: 1fr;
             }
             .section-card {
                 padding: 20px;
             }
-            .now-playing-card .album-cover {
+            .section-card h2 {
+                font-size: 1.5rem;
+            }
+            .now-playing-content img {
                 width: 150px;
                 height: 150px;
             }
-            .player-controls button {
-                width: 40px;
-                height: 40px;
+            .now-playing-content .title {
+                font-size: 1.8rem;
             }
-            .player-controls .play-btn {
+            .now-playing-content .artist {
+                font-size: 1rem;
+            }
+            .player-controls-group {
+                gap: 15px;
+            }
+            .btn-icon.main-control {
                 width: 50px;
                 height: 50px;
-            }
-            .volume-slider {
-                width: 100px;
+                font-size: 1.5rem;
             }
         }
 
         @media (max-width: 480px) {
             .dashboard-container {
-                padding: 10px;
+                padding: 15px;
             }
-            .header {
+            .header-content {
                 flex-direction: column;
-                align-items: flex-start;
                 gap: 10px;
             }
-            .header h1 {
-                font-size: 1.3rem;
+            .header-title {
+                text-align: center;
             }
-            .navbar {
+            .header-title h1 {
+                font-size: 1.8rem;
+            }
+            .header-title p {
+                font-size: 0.9rem;
+            }
+            .user-auth-section {
+                flex-direction: column;
+                width: 100%;
+                gap: 10px;
+            }
+            .user-auth-section .btn {
+                width: 100%;
+            }
+            .nav-tabs {
                 flex-wrap: wrap;
                 justify-content: center;
             }
-            .navbar button {
-                padding: 8px 15px;
-                font-size: 0.8rem;
-            }
-            .search-bar {
+            .search-bar-container {
                 flex-direction: column;
-                gap: 15px;
             }
-            .search-bar button {
+            .search-bar-container input,
+            .search-bar-container .btn {
                 width: 100%;
             }
-            .now-playing-card .album-cover {
+            .now-playing-content img {
                 width: 120px;
                 height: 120px;
             }
-            .now-playing-card .song-details .title {
-                font-size: 1.2rem;
+            .now-playing-content .title {
+                font-size: 1.5rem;
+            }
+            .now-playing-content .artist {
+                font-size: 0.9rem;
+            }
+            .player-controls-group {
+                gap: 10px;
+            }
+            .btn-icon.main-control {
+                width: 45px;
+                height: 45px;
+                font-size: 1.3rem;
+            }
+            .volume-control-group {
+                width: 100%;
+            }
+            .queue-list li, .search-results-list li, .chat-message .message-content, .reminders-list li {
+                font-size: 0.9rem;
+                padding: 10px;
+            }
+            .chat-message .avatar {
+                width: 25px;
+                height: 25px;
+                font-size: 0.8rem;
             }
         }
     </style>
 </head>
 <body>
-    <script>
-        // Pass base_url from Flask to JavaScript
-        const BASE_URL = "{{ base_url | safe }}";
-    </script>
     <div class="dashboard-container">
-        <div class="header">
-            <div>
-                <h1>Discord Music Bot <span>AI-Enhanced Music & Community Assistant</span></h1>
-            </div>
-            <div class="user-profile">
-                <!-- Placeholder for user profile if authenticated -->
-                <div class="avatar"><i class="fas fa-user"></i></div>
-                <span id="userNameDisplay">Guest User</span>
-            </div>
-        </div>
-
-        <div class="navbar">
-            <button class="active"><i class="fas fa-music"></i> Music Player</button>
-            <button><i class="fas fa-chart-bar"></i> Server Stats</button>
-            <button><i class="fas fa-bell"></i> Reminders</button>
-            <button><i class="fas fa-shield-alt"></i> Security</button>
-            <button><i class="fas fa-cog"></i> Settings</button>
-        </div>
-
-        <div class="main-content">
-            <!-- Music Player Section (Left Side) -->
-            <div class="section-card">
-                <h2>Search Music</h2>
-                <div class="search-bar">
-                    <input type="text" id="musicSearchInput" placeholder="Search for songs, artists, or albums...">
-                    <button id="searchMusicBtn"><i class="fas fa-search"></i></button>
+        <div class="header-section">
+            <div class="header-content">
+                <div class="bot-icon-container">🎵</div>
+                <div class="header-title">
+                    <h1>Harmony AI Jams</h1>
+                    <p>AI-Enhanced Music & Community Assistant</p>
                 </div>
-
-                <div class="login-buttons-container" id="authSection">
-                    <!-- Authentication buttons shown based on login status -->
-                    <button class="login-btn discord" id="discordLoginBtn">
+            </div>
+            <div class="user-auth-section">
+                {% if not is_discord_linked %}
+                    <a href="{{ base_url }}login/discord" class="btn">
                         <i class="fab fa-discord"></i> Login with Discord
-                    </button>
-                    <button class="login-btn spotify auth-hidden" id="spotifyConnectBtn">
-                        <i class="fab fa-spotify"></i> Connect Spotify
-                    </button>
-                    <div class="login-status-message auth-hidden" id="authStatusMessage"></div>
-                </div>
+                    </a>
+                {% else %}
+                    <div class="user-info">
+                        <div class="user-avatar"><i class="fas fa-user"></i></div>
+                        <span id="loggedInUsername">{{ discord_username or ('User ID: ' + discord_user_id) }}</span>
+                    </div>
+                    {% if not is_spotify_linked %}
+                        <a href="{{ base_url }}login/spotify/{{ discord_user_id }}" class="btn btn-green">
+                            <i class="fab fa-spotify"></i> Connect Spotify
+                        </a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
 
-                <h2>Now Playing</h2>
-                <div class="now-playing-card">
-                    <div class="album-cover">
-                        <img id="coverImage" src="https://placehold.co/400x400/3498db/ffffff?text=No+Music" alt="Album Cover">
+        <div class="nav-tabs">
+            <button class="active" data-tab="musicPlayer"><i class="fas fa-music"></i> Music Player</button>
+            <button data-tab="aiChat"><i class="fas fa-comments"></i> AI Chat Assistant</button>
+            <button data-tab="reminders"><i class="fas fa-bell"></i> Reminders</button>
+            <button data-tab="security"><i class="fas fa-shield-alt"></i> Security Alerts</button>
+            <button data-tab="settings"><i class="fas fa-cog"></i> Settings</button>
+        </div>
+
+        <div class="tab-content">
+            <!-- Music Player Tab Content -->
+            <div id="musicPlayerContent" class="tab-pane active">
+                <div class="space-y-8">
+                    <!-- Search Music Section -->
+                    <div class="section-card">
+                        <h2><i class="fas fa-search"></i> Search Music</h2>
+                        <p class="text-gray-400">Search for songs on Spotify and add them to your queue.</p>
+                        <form id="searchMusicForm" class="search-bar-container">
+                            <input type="text" id="musicSearchInput" placeholder="Search for songs, artists, or albums...">
+                            <button type="submit" class="btn">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </form>
+                        <ul id="searchResultsList" class="search-results-list custom-scrollbar">
+                            <!-- Search results will be dynamically added here -->
+                        </ul>
                     </div>
-                    <div class="song-details">
-                        <div class="title" id="songTitle">Welcome to your Music Bot</div>
-                        <div class="artist" id="artistName">Get started by searching for a song</div>
-                    </div>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar-fill" id="progressBar"></div>
-                    </div>
-                    <div class="time-display">
-                        <span id="currentTime">0:00</span>
-                        <span id="totalTime">0:00</span>
-                    </div>
-                    <div class="player-controls">
-                        <button id="prevBtn"><i class="fas fa-backward"></i></button>
-                        <button class="play-btn" id="playPauseBtn">
-                            <i class="fas fa-play" id="playIcon"></i>
-                            <i class="fas fa-pause auth-hidden" id="pauseIcon"></i>
-                        </button>
-                        <button id="nextBtn"><i class="fas fa-forward"></i></button>
-                        <button id="stopBtn"><i class="fas fa-stop"></i></button>
-                    </div>
-                    <div class="volume-control">
-                        <i class="fas fa-volume-down icon"></i>
-                        <input type="range" class="volume-slider" id="volumeSlider" min="0" max="200" value="100">
-                        <i class="fas fa-volume-up icon"></i>
+
+                    <!-- Now Playing and Queue Section -->
+                    <div class="main-content-grid">
+                        <!-- Now Playing -->
+                        <div class="section-card">
+                            <h2>Now Playing</h2>
+                            <div id="nowPlayingContent" class="now-playing-content">
+                                <!-- Content will be dynamically loaded here -->
+                                <div class="now-playing-placeholder">
+                                    <span class="icon">🎵</span>
+                                    <h3>Welcome to your Music Bot</h3>
+                                    <p>Get started by searching for a song</p>
+                                </div>
+                            </div>
+
+                            <!-- Progress Bar -->
+                            <div class="progress-container">
+                                <div id="progressBar" class="progress-bar"></div>
+                            </div>
+                            <div class="time-labels">
+                                <span id="currentTime">0:00</span>
+                                <span id="totalTime">0:00</span>
+                            </div>
+
+                            <!-- Playback Controls -->
+                            <div class="player-controls-group">
+                                <button id="shuffleBtn" class="btn-small-icon" title="Shuffle">
+                                    <i class="fas fa-random"></i>
+                                </button>
+                                <button id="prevBtn" class="btn-small-icon" title="Previous Song">
+                                    <i class="fas fa-backward"></i>
+                                </button>
+                                <button id="playPauseBtn" class="btn-icon main-control" title="Play/Pause">
+                                    <i id="playIcon" class="fas fa-play"></i>
+                                    <i id="pauseIcon" class="fas fa-pause" style="display: none;"></i>
+                                </button>
+                                <button id="nextBtn" class="btn-small-icon" title="Next Song">
+                                    <i class="fas fa-forward"></i>
+                                </button>
+                                <button id="repeatBtn" class="btn-small-icon" title="Repeat">
+                                    <i class="fas fa-redo"></i>
+                                </button>
+                            </div>
+
+                            <!-- Volume Control -->
+                            <div class="volume-control-group">
+                                <i class="fas fa-volume-down" style="color: var(--gray-400);"></i>
+                                <input type="range" id="volumeSlider" min="0" max="100" value="70" class="volume-slider">
+                                <i class="fas fa-volume-up" style="color: var(--gray-400);"></i>
+                            </div>
+                        </div>
+
+                        <!-- Queue Section -->
+                        <div class="section-card">
+                            <h2 class="flex items-center justify-between">
+                                <span class="flex items-center gap-2"><i class="fas fa-list-music" style="color: var(--accent-blue);"></i> Queue</span>
+                                <button id="addQueueItemBtn" class="btn-small-icon">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </h2>
+                            <div id="queueListContainer" class="queue-list-container custom-scrollbar">
+                                <ul id="queueList" class="queue-list">
+                                    <li class="text-center text-gray-400 italic" style="margin-top: 10px;">Queue is empty. Search for songs to add!</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Queue Section (Right Side) -->
-            <div class="section-card">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h2>Queue</h2>
-                    <button id="addQueueItemBtn" style="background: var(--primary-purple); border: none; border-radius: 8px; padding: 5px 10px; color: white; cursor: pointer; font-size: 0.8rem;">
-                        <i class="fas fa-plus"></i> Add
-                    </button>
+            <!-- AI Chat Assistant Tab Content -->
+            <div id="aiChatContent" class="tab-pane" style="display: none;">
+                <div class="section-card">
+                    <h2><i class="fas fa-comments"></i> AI Chat Assistant</h2>
+                    <p class="text-gray-400">Ask me anything! I'm here to help you with bot commands, music recommendations, or just for a chat.</p>
+                    <div id="chatHistory" class="chat-history custom-scrollbar">
+                        <!-- Chat messages will be dynamically added here -->
+                        <div class="chat-message bot">
+                            <div class="avatar">🤖</div>
+                            <div class="message-content">Hello! How can I help you today?</div>
+                        </div>
+                    </div>
+                    <form id="chatForm" class="chat-input-form">
+                        <input type="text" id="chatInput" placeholder="Type your message...">
+                        <button type="submit" id="sendChatBtn">Send</button>
+                    </form>
+                    <div id="thinkingIndicator" class="thinking-indicator" style="display: none;">AI is thinking...</div>
                 </div>
-                <ul class="queue-list" id="queueList">
-                    <!-- Dynamic content will be loaded here -->
-                    <li>
-                        <div class="song-details">
-                            <div class="title">Song Example 1</div>
-                            <div class="artist">Artist 1</div>
-                        </div>
-                        <div class="duration">3:45</div>
-                    </li>
-                    <li>
-                        <div class="song-details">
-                            <div class="title">Song Example 2</div>
-                            <div class="artist">Artist 2</div>
-                        </div>
-                        <div class="duration">4:20</div>
-                    </li>
-                    <li>
-                        <div class="song-details">
-                            <div class="title">Song Example 3</div>
-                            <div class="artist">Artist 3</div>
-                        </div>
-                        <div class="duration">3:12</div>
-                    </li>
-                </ul>
+            </div>
+
+            <!-- Reminders Tab Content -->
+            <div id="remindersContent" class="tab-pane" style="display: none;">
+                <div class="section-card">
+                    <h2><i class="fas fa-bell"></i> Reminders</h2>
+                    <p class="text-gray-400">Set daily, weekly, or custom reminders for your Discord server or yourself.</p>
+                    <form id="reminderForm" class="reminder-form">
+                        <input type="text" id="reminderTextInput" placeholder="Reminder text (e.g., 'Team meeting at 3 PM')">
+                        <input type="time" id="reminderTimeInput" value="09:00">
+                        <button type="submit" class="btn">Add Reminder</button>
+                    </form>
+                    <ul id="remindersList" class="reminders-list custom-scrollbar">
+                        <!-- Reminders will be dynamically added here -->
+                        <li class="text-center text-gray-400 italic" style="margin-top: 10px;">No reminders set.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Security Alerts Tab Content -->
+            <div id="securityContent" class="tab-pane" style="display: none;">
+                <div class="section-card">
+                    <h2><i class="fas fa-shield-alt"></i> Security Alerts</h2>
+                    <p class="text-gray-400">Real-time monitoring for suspicious activities and intelligent alerts to keep your server safe.</p>
+                    <ul id="securityAlertsList" class="security-alerts-list custom-scrollbar">
+                        <!-- Security alerts will be dynamically added here -->
+                        <li class="text-center text-gray-400 italic" style="margin-top: 10px;">No active security alerts.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Settings Tab Content -->
+            <div id="settingsContent" class="tab-pane" style="display: none;">
+                <div class="section-card settings-placeholder">
+                    <i class="fas fa-cog icon"></i>
+                    <h3>Settings</h3>
+                    <p>Configure bot preferences, integrations, and permissions here.</p>
+                    <p class="text-gray-500 text-sm mt-2"> (This feature is currently under development.)</p>
+                </div>
             </div>
         </div>
     </div>
@@ -648,389 +1126,21 @@
     </div>
 
     <script>
-        // --- DOM Elements ---
-        const authSection = document.getElementById('authSection');
-        const discordLoginBtn = document.getElementById('discordLoginBtn');
-        const spotifyConnectBtn = document.getElementById('spotifyConnectBtn');
-        const authStatusMessage = document.getElementById('authStatusMessage');
-        const userNameDisplay = document.getElementById('userNameDisplay');
+        // Pass base_url, firebaseConfig, appId, initialAuthToken from Flask to JavaScript
+        const BASE_URL = "{{ base_url | safe }}";
+        const FIREBASE_CONFIG = {{ firebase_config | tojson }};
+        const APP_ID = "{{ appId | safe }}";
+        const INITIAL_AUTH_TOKEN = {{ initial_auth_token | tojson }};
 
-        const musicSearchInput = document.getElementById('musicSearchInput');
-        const searchMusicBtn = document.getElementById('searchMusicBtn');
-        
-        const playPauseBtn = document.getElementById('playPauseBtn');
-        const playIcon = document.getElementById('playIcon');
-        const pauseIcon = document.getElementById('pauseIcon');
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
-        const stopBtn = document.getElementById('stopBtn');
-        const volumeSlider = document.getElementById('volumeSlider');
-        const addQueueItemBtn = document.getElementById('addQueueItemBtn'); // For the add button next to Queue title
-
-        // Placeholder for song info (bot doesn't send this yet)
-        const songTitle = document.getElementById('songTitle');
-        const artistName = document.getElementById('artistName');
-        const coverImage = document.getElementById('coverImage');
-        const progressBar = document.getElementById('progressBar');
-        const currentTimeDisplay = document.getElementById('currentTime');
-        const totalTimeDisplay = document.getElementById('totalTime');
-        const queueList = document.getElementById('queueList');
-
-        // --- State Variables ---
-        let isDiscordLinked = false;
-        let isSpotifyLinked = false;
-        let discordUserId = null; // To store the Discord user ID for Spotify linking
-        let isPlaying = false; // Local UI state for play/pause button
-        let playbackProgressInterval = null; // Interval for updating progress bar
-        let currentTrackDuration = 0; // Total duration of current track in ms
-        let currentTrackProgress = 0; // Current progress of current track in ms
-
-        // --- Utility Functions ---
-
-        // Helper to format time from milliseconds to MM:SS
-        function formatTime(ms) {
-            const totalSeconds = Math.floor(ms / 1000);
-            const minutes = Math.floor(totalSeconds / 60);
-            const seconds = totalSeconds % 60;
-            return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-        }
-
-        // Update progress bar and time display
-        function updateProgressBarUI() {
-            if (currentTrackDuration > 0) {
-                const progressPercentage = (currentTrackProgress / currentTrackDuration) * 100;
-                progressBar.style.width = `${progressPercentage}%`;
-                currentTimeDisplay.textContent = formatTime(currentTrackProgress);
-                totalTimeDisplay.textContent = formatTime(currentTrackDuration);
-            } else {
-                progressBar.style.width = '0%';
-                currentTimeDisplay.textContent = '0:00';
-                totalTimeDisplay.textContent = '0:00';
-            }
-        }
-
-        // Function to update local progress state
-        function startProgressInterval() {
-            if (playbackProgressInterval) {
-                clearInterval(playbackProgressInterval);
-            }
-            playbackProgressInterval = setInterval(() => {
-                if (isPlaying && currentTrackProgress < currentTrackDuration) {
-                    currentTrackProgress += 1000; // Increment by 1 second
-                    updateProgressBarUI();
-                } else if (currentTrackProgress >= currentTrackDuration) {
-                    clearInterval(playbackProgressInterval);
-                    // Optionally trigger a new fetch or queue advance here if client-side playback
-                }
-            }, 1000);
-        }
-
-        // Function to show/hide elements based on authentication status
-        function updateAuthUI() {
-            if (isDiscordLinked) {
-                discordLoginBtn.classList.add('auth-hidden');
-                spotifyConnectBtn.classList.remove('auth-hidden');
-                authStatusMessage.classList.remove('auth-hidden');
-                // userNameDisplay.textContent = `User ID: ${discordUserId}`; // Display Discord User ID
-                // ^ Commenting this out for now as the screenshot does not show this, and the username is more appropriate if available.
-
-                if (isSpotifyLinked) {
-                    spotifyConnectBtn.classList.add('auth-hidden');
-                    authStatusMessage.textContent = 'เชื่อมต่อ Discord และ Spotify แล้ว';
-                    // Enable music search input and buttons
-                    musicSearchInput.disabled = false;
-                    searchMusicBtn.disabled = false;
-                    playPauseBtn.disabled = false;
-                    prevBtn.disabled = false;
-                    nextBtn.disabled = false;
-                    stopBtn.disabled = false;
-                    volumeSlider.disabled = false;
-                    addQueueItemBtn.disabled = false;
-                } else {
-                    authStatusMessage.textContent = 'เชื่อมต่อ Discord แล้ว (กรุณาเชื่อมต่อ Spotify)';
-                    // Disable music search input and buttons until Spotify is linked
-                    musicSearchInput.disabled = true;
-                    searchMusicBtn.disabled = true;
-                    playPauseBtn.disabled = true;
-                    prevBtn.disabled = true;
-                    nextBtn.disabled = true;
-                    stopBtn.disabled = true;
-                    volumeSlider.disabled = true;
-                    addQueueItemBtn.disabled = false; // Add to queue is allowed even if Spotify not linked
-                }
-            } else {
-                discordLoginBtn.classList.remove('auth-hidden');
-                spotifyConnectBtn.classList.add('auth-hidden');
-                authStatusMessage.classList.add('auth-hidden');
-                authStatusMessage.textContent = '';
-                userNameDisplay.textContent = 'Guest User';
-                // Disable all music controls if not Discord linked
-                musicSearchInput.disabled = true;
-                searchMusicBtn.disabled = true;
-                playPauseBtn.disabled = true;
-                prevBtn.disabled = true;
-                nextBtn.disabled = true;
-                stopBtn.disabled = true;
-                volumeSlider.disabled = true;
-                addQueueItemBtn.disabled = true;
-            }
-        }
-
-        // Function to fetch authentication status from Flask backend API
-        async function fetchAuthStatus() {
-            try {
-                const response = await fetch(BASE_URL + 'api/auth_status');
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                const data = await response.json();
-                isDiscordLinked = data.is_discord_linked;
-                isSpotifyLinked = data.is_spotify_linked;
-                updateAuthUI(); // Update UI based on fetched status
-                
-                // Get Discord User ID for Spotify linking and display
-                if (isDiscordLinked) {
-                    const discordUserResponse = await fetch(BASE_URL + 'api/discord_user_id');
-                    if (!discordUserResponse.ok) throw new Error(`HTTP error! status: ${discordUserResponse.status}`);
-                    const discordUserData = await discordUserResponse.json();
-                    discordUserId = discordUserData.discord_user_id;
-                    userNameDisplay.textContent = `User ID: ${discordUserId}`; // Display Discord User ID
-                }
-
-            } catch (error) {
-                console.error('Error fetching auth status:', error);
-                // Fallback to not linked if API fails
-                isDiscordLinked = false;
-                isSpotifyLinked = false;
-                updateAuthUI();
-                showFlashMessage('Error fetching connection status.', 'error');
-            }
-        }
-
-        // Function to fetch and update "Now Playing" data
-        async function fetchNowPlayingData() {
-            try {
-                const response = await fetch(BASE_URL + 'api/now_playing_data');
-                const data = await response.json();
-
-                if (data.status === 'playing_spotify' || data.status === 'playing_youtube') {
-                    songTitle.textContent = data.title;
-                    artistName.textContent = data.artist;
-                    coverImage.src = data.album_cover_url;
-                    currentTrackDuration = data.duration_ms;
-                    currentTrackProgress = data.progress_ms; // Spotify provides actual progress
-                    isPlaying = true;
-                    playIcon.classList.add('auth-hidden');
-                    pauseIcon.classList.remove('auth-hidden');
-                    startProgressInterval(); // Start updating local progress bar
-                } else {
-                    songTitle.textContent = 'Welcome to your Music Bot';
-                    artistName.textContent = 'Get started by searching for a song';
-                    coverImage.src = 'https://placehold.co/400x400/3498db/ffffff?text=No+Music';
-                    isPlaying = false;
-                    playIcon.classList.remove('auth-hidden');
-                    pauseIcon.classList.add('auth-hidden');
-                    currentTrackDuration = 0;
-                    currentTrackProgress = 0;
-                    if (playbackProgressInterval) {
-                        clearInterval(playbackProgressInterval);
-                        playbackProgressInterval = null;
-                    }
-                }
-                updateProgressBarUI();
-            } catch (error) {
-                console.error('Error fetching now playing data:', error);
-                // Do not show a flash message here, as it would be too frequent on continuous errors.
-            }
-        }
-
-        // Function to fetch and update Queue data
-        async function fetchQueueData() {
-            try {
-                const response = await fetch(BASE_URL + 'api/queue_data');
-                const data = await response.json();
-
-                queueList.innerHTML = ''; // Clear existing queue items
-                if (data.queue && data.queue.length > 0) {
-                    data.queue.forEach(item => {
-                        const listItem = document.createElement('li');
-                        // For simplicity, display URL. In a real app, you might fetch metadata.
-                        listItem.innerHTML = `
-                            <div class="song-details">
-                                <div class="title">${item}</div>
-                                <div class="artist"></div>
-                            </div>
-                            <div class="duration"></div>
-                        `;
-                        queueList.appendChild(listItem);
-                    });
-                } else {
-                    queueList.innerHTML = '<li><div class="song-details"><div class="title">Queue is empty</div></div></li>';
-                }
-            } catch (error) {
-                console.error('Error fetching queue data:', error);
-            }
-        }
-
-
-        // Function to display flash messages
-        function showFlashMessage(message, category) {
-            const flashMessagesContainer = document.getElementById('flashMessages');
-            const flashDiv = document.createElement('div');
-            flashDiv.className = `flash-message ${category}`;
-            flashDiv.textContent = message;
-            flashMessagesContainer.appendChild(flashDiv);
-
-            setTimeout(() => {
-                flashDiv.style.animation = 'fadeOut 0.5s ease-out forwards';
-                flashDiv.addEventListener('animationend', () => flashDiv.remove());
-            }, 5000); // Message stays for 5 seconds
-        }
-
-
-        // --- Event Listeners ---
-
-        // Discord Login Button
-        discordLoginBtn.addEventListener('click', () => {
-            window.location.href = BASE_URL + "login/discord";
-        });
-
-        // Spotify Connect Button
-        spotifyConnectBtn.addEventListener('click', () => {
-            if (isDiscordLinked && discordUserId) {
-                window.location.href = BASE_URL + `login/spotify/${discordUserId}`;
-            } else {
-                showFlashMessage('Please log in with Discord first to connect Spotify.', 'error');
-                console.error('Spotify connect attempt before Discord login or missing Discord User ID.');
-            }
-        });
-
-        // Search Music Button (for Spotify via /play command)
-        searchMusicBtn.addEventListener('click', async () => {
-            const query = musicSearchInput.value.trim();
-            if (query) {
-                // In a real app, you would send this search query to your backend
-                // which then relays it to Discord bot's /play command.
-                // For this setup, we'll simulate it with a fetch to trigger the bot's play command.
-                // This is a simplified example.
-                try {
-                    const response = await fetch(BASE_URL + 'web_control/search_play', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ query: query })
-                    });
-                    const result = await response.json();
-                    if (response.ok) {
-                        showFlashMessage(result.message, 'success');
-                    } else {
-                        showFlashMessage(result.message || 'Error searching music.', 'error');
-                    }
-                } catch (error) {
-                    console.error('Error sending search query:', error);
-                    showFlashMessage('Failed to send search query. Please try again.', 'error');
-                }
-                musicSearchInput.value = '';
-            } else {
-                showFlashMessage('กรุณาป้อนชื่อเพลง ศิลปิน หรืออัลบั้มเพื่อค้นหา.', 'info');
-            }
-        });
-
-        // Play/Pause Button
-        playPauseBtn.addEventListener('click', async () => {
-            if (isPlaying) {
-                await fetch(BASE_URL + 'web_control/pause');
-            } else {
-                await fetch(BASE_URL + 'web_control/resume');
-            }
-            // Fetch latest status to update UI immediately
-            await fetchNowPlayingData();
-        });
-
-        // Previous Button
-        prevBtn.addEventListener('click', async () => {
-            await fetch(BASE_URL + 'web_control/skip_previous'); // Assuming a skip_previous route exists or skip next
-            await fetchNowPlayingData();
-        });
-
-        // Next Button
-        nextBtn.addEventListener('click', async () => {
-            await fetch(BASE_URL + 'web_control/skip');
-            await fetchNowPlayingData();
-        });
-
-        // Stop Button
-        stopBtn.addEventListener('click', async () => {
-            await fetch(BASE_URL + 'web_control/stop');
-            await fetchNowPlayingData();
-            await fetchQueueData(); // Also update queue as it's cleared on stop
-        });
-
-        // Volume Slider
-        volumeSlider.addEventListener('input', async () => {
-            const volume = volumeSlider.value;
-            // Assuming you want to map 0-200 to 0.0-2.0 or 0-100%
-            // The bot uses 0.1 to 2.0, so maybe map 0-200 to 0.1-2.0
-            const mappedVolume = volume / 100; // Maps 0-200 to 0-2.0
-            
-            // This would require a dedicated endpoint in Flask
-            // For now, let's just send the value and the bot logic will handle it
-            try {
-                // You'll need a new Flask route for setting exact volume
-                // e.g., /web_control/set_volume?vol=1.5
-                await fetch(`${BASE_URL}web_control/set_volume?vol=${mappedVolume}`);
-            } catch (error) {
-                console.error("Error setting volume:", error);
-            }
-        });
-
-        // Add to Queue button next to "Queue" title
-        addQueueItemBtn.addEventListener('click', () => {
-            const url = prompt("กรุณาป้อน YouTube/SoundCloud URL ที่จะเพิ่มเข้าคิว:");
-            if (url) {
-                const formData = new FormData();
-                formData.append('url', url.trim());
-                fetch(BASE_URL + 'web_control/add', {
-                    method: 'POST',
-                    body: formData
-                }).then(response => {
-                    if (response.ok) {
-                        showFlashMessage('เพิ่มลงคิวแล้ว!', 'success');
-                        fetchQueueData(); // Refresh queue display
-                        fetchNowPlayingData(); // Check if playback started
-                    } else {
-                        showFlashMessage('ไม่สามารถเพิ่มลงในคิวได้ กรุณาลองใหม่.', 'error');
-                    }
-                }).catch(error => {
-                    console.error('Error adding to queue:', error);
-                    showFlashMessage('ไม่สามารถเพิ่มลงในคิวได้ กรุณาลองใหม่.', 'error');
-                });
-            }
-        });
-
-
-        // --- Initial Setup and Periodic Updates ---
-        document.addEventListener('DOMContentLoaded', async () => {
-            // Initial fetch of auth status
-            await fetchAuthStatus();
-            // Initial fetch of now playing and queue data
-            await fetchNowPlayingData();
-            await fetchQueueData();
-
-            // Set up periodic updates for now playing and queue data
-            setInterval(fetchNowPlayingData, 5000); // Every 5 seconds
-            setInterval(fetchQueueData, 10000); // Every 10 seconds
-
-            // Auto-hide Flask flash messages (if any rendered by Jinja)
-            document.querySelectorAll('.flash-message').forEach(flashDiv => {
-                setTimeout(() => {
-                    flashDiv.style.animation = 'fadeOut 0.5s ease-out forwards';
-                    flashDiv.addEventListener('animationend', () => flashDiv.remove());
-                }, 5000); // Message stays for 5 seconds
-            });
-
-            // Handle initial state of play/pause button based on fetched data
-            updateProgressBarUI();
-        });
+        // Initial auth status (from Flask context, updated by JS)
+        let isDiscordLinked = {{ is_discord_linked | tojson }};
+        let isSpotifyLinked = {{ is_spotify_linked | tojson }};
+        let discordUserId = {{ discord_user_id | tojson }};
+        let discordUsername = {{ discord_username | tojson }};
     </script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="{{ url_for('static', filename='index.js') }}"></script>
 </body>
 </html>
