@@ -1,62 +1,95 @@
-/* General body and container styling */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Inter', sans-serif; /* Ensuring Inter font is applied */
+/* Custom styles for Inter font and any overrides */
+body {
+    font-family: 'Inter', sans-serif;
 }
 
-body {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    min-height: 100vh;
+/* Main container grid for two columns */
+.main-container {
+    display: grid;
+    grid-template-columns: 1fr; /* Single column on small screens */
+    gap: 2rem;
+    padding: 2rem;
+}
+
+@media (min-width: 1024px) { /* On large screens and up (lg) */
+    .main-container {
+        grid-template-columns: 2fr 1fr; /* Now Playing (2 parts) | Queue/Auth (1 part) */
+    }
+    .lg\:col-span-2 { /* Utility class for flash messages to span both columns */
+        grid-column: span 2 / span 2;
+    }
+}
+
+/* Card base styles */
+.now-playing-card, .queue-card, .auth-card {
+    background-color: rgba(55, 65, 81, 0.7); /* bg-gray-700 with opacity */
+    border-radius: 0.75rem; /* rounded-xl */
+    padding: 1.5rem; /* p-6 */
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-lg */
+    border: 1px solid rgba(139, 92, 246, 0.3); /* border-purple-700/30 */
+    color: #fff; /* text-white */
+}
+
+/* Now Playing specific styles */
+.now-playing-card {
     display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; /* Center content vertically */
+}
+
+.now-playing-card h2, .queue-card h2, .auth-card h2 {
+    color: #a78bfa; /* text-purple-300 */
+}
+
+/* Welcome state styles */
+#welcomeState {
+    display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    height: 100%; /* Ensure it takes full height of its container */
+    padding-top: 2rem; /* Add some padding if needed */
+    padding-bottom: 2rem;
 }
 
-.player-container {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(20px);
-    border-radius: 20px;
-    padding: 40px;
-    box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    max-width: 400px;
+#welcomeState svg {
+    color: #a78bfa; /* text-purple-400 */
+}
+
+#welcomeState h3 {
+    color: #fff; /* text-white */
+}
+
+#welcomeState p {
+    color: #d8b4fe; /* text-purple-200 */
+}
+
+#searchOrUrlInput {
+    background-color: rgba(75, 85, 99, 0.6); /* bg-gray-600 with opacity */
+    border: 1px solid rgba(107, 114, 128, 0.5); /* border-gray-500 with opacity */
+    color: #fff;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+}
+
+#searchOrUrlInput::placeholder {
+    color: rgba(209, 213, 219, 0.7); /* placeholder-gray-400 */
+}
+
+#searchOrUrlInput:focus {
+    outline: none;
+    ring: 2px solid #a78bfa; /* focus:ring-purple-500 */
+}
+
+/* Current Playing State Styles */
+#nowPlayingState {
     width: 100%;
-    text-align: center;
-    transition: transform 0.3s ease;
 }
 
-.player-container:hover {
-    transform: translateY(-5px);
-}
-
-/* Album Art */
-.album-art {
-    width: 250px;
-    height: 250px;
-    border-radius: 20px;
-    margin: 0 auto 30px;
-    overflow: hidden;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
-    position: relative;
-    transition: transform 0.3s ease;
-}
-
-.album-art:hover {
-    transform: scale(1.05);
-}
-
-.album-art img {
-    width: 100%;
-    height: 100%;
+#currentCoverImage {
     object-fit: cover;
-    transition: transform 0.3s ease;
-}
-
-.album-art.playing img {
-    animation: rotate 20s linear infinite;
+    animation: rotate 20s linear infinite; /* Add rotation animation */
 }
 
 @keyframes rotate {
@@ -64,252 +97,128 @@ body {
     to { transform: rotate(360deg); }
 }
 
-/* Song Info */
-.song-info {
-    margin-bottom: 30px;
-    color: white;
-}
-
-.song-title {
-    font-size: 24px;
-    font-weight: bold;
-    margin-bottom: 8px;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.artist-name {
-    font-size: 16px;
-    opacity: 0.8;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-/* Progress Bar */
+/* Progress bar styles */
 .progress-container {
-    margin: 20px 0;
-    background: rgba(255, 255, 255, 0.2);
+    margin-bottom: 1.5rem;
+}
+
+.progress-bar-bg {
+    background-color: rgba(255, 255, 255, 0.2); /* Semi-transparent white background */
     height: 6px;
     border-radius: 3px;
     overflow: hidden;
+    position: relative; /* Needed for absolute positioning of fill if desired */
 }
 
-.progress-bar {
+.progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #ff6b6b, #feca57);
+    width: 0%; /* Controlled by JS */
+    background: linear-gradient(to right, #a78bfa, #8b5cf6); /* Purple gradient */
     border-radius: 3px;
-    width: 0%;
-    transition: width 0.3s ease;
+    transition: width 0.1s linear; /* Smooth transition for progress */
 }
 
-/* Controls */
-.controls {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 20px;
-    margin-top: 30px;
-}
-
+/* Control buttons for playback */
 .control-btn {
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    border-radius: 50%;
-    width: 60px;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    transition: all 0.2s ease-in-out;
 }
 
 .control-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
-    transform: scale(1.1);
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
 }
 
-.control-btn:active {
-    transform: scale(0.95);
+.control-btn svg {
+    stroke: currentColor;
 }
 
-.play-pause-btn {
-    width: 80px;
-    height: 80px;
-    background: linear-gradient(135deg, #ff6b6b, #feca57);
+.main-play-btn {
+    background-color: #8b5cf6; /* bg-purple-500 */
+    border-color: #8b5cf6;
 }
 
-.play-pause-btn:hover {
-    background: linear-gradient(135deg, #ff5252, #ffca28);
-    box-shadow: 0 10px 25px rgba(255, 107, 107, 0.4);
+.main-play-btn:hover {
+    background-color: #7c3aed; /* hover:bg-purple-600 */
 }
 
-.control-icon {
-    width: 24px;
-    height: 24px;
-    fill: white;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-}
-
-.play-pause-btn .control-icon {
-    width: 32px;
-    height: 32px;
-}
-
-/* Volume Control */
-.volume-container {
-    margin-top: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
+/* Volume control */
+.volume-control {
+    color: #d8b4fe; /* text-purple-200 */
 }
 
 .volume-slider {
-    width: 100px;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 2px;
-    outline: none;
+    width: 100%;
+    height: 6px;
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
     -webkit-appearance: none;
+    appearance: none;
+    outline: none;
+    cursor: pointer;
 }
 
 .volume-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     width: 16px;
     height: 16px;
-    background: white;
     border-radius: 50%;
-    cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    transition: background 0.2s ease-in-out;
 }
 
-.volume-icon {
-    width: 20px;
-    height: 20px;
-    fill: rgba(255, 255, 255, 0.8);
+.volume-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    transition: background 0.2s ease-in-out;
 }
 
-/* Authentication Section */
-.auth-container {
-    margin-top: 30px;
+/* Right column container (for Queue and Auth cards) */
+.right-column-container {
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    align-items: center;
+    gap: 2rem;
 }
 
-.auth-btn, .web-control-btn {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
-    padding: 12px 24px;
-    color: white;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: 200px;
-    justify-content: center;
-    text-decoration: none; /* For <a> tags acting as buttons */
+/* Queue List */
+#queueList li {
+    background-color: rgba(75, 85, 99, 0.4); /* bg-gray-600 with opacity */
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    color: #fff;
 }
 
-.auth-btn:hover, .web-control-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+#queueList li span:first-child {
+    color: #a78bfa; /* text-purple-300 */
 }
 
-.discord-btn {
-    background: linear-gradient(135deg, #5865f2, #7289da);
-    border: 1px solid rgba(88, 101, 242, 0.3);
+/* Auth Section Styles (from previous version, ensuring consistency) */
+#discordStatus a, #spotifyStatus a {
+    @apply px-4 py-2 rounded-lg shadow-md font-semibold transition duration-300 text-sm;
 }
 
-.discord-btn:hover {
-    background: linear-gradient(135deg, #4752c4, #5b6ecd);
-    box-shadow: 0 8px 25px rgba(88, 101, 242, 0.4);
+#discordStatus a.bg-blue-600 {
+    background-color: #2563eb; /* Tailwind blue-600 */
+}
+#discordStatus a.bg-blue-600:hover {
+    background-color: #1d4ed8; /* Tailwind blue-700 */
 }
 
-.spotify-btn {
-    background: linear-gradient(135deg, #1db954, #1ed760);
-    border: 1px solid rgba(29, 185, 84, 0.3);
+#spotifyStatus a.bg-green-600 {
+    background-color: #16a34a; /* Tailwind green-600 */
+}
+#spotifyStatus a.bg-green-600:hover {
+    background-color: #15803d; /* Tailwind green-700 */
 }
 
-.spotify-btn:hover {
-    background: linear-gradient(135deg, #1aa34a, #1bc653);
-    box-shadow: 0 8px 25px rgba(29, 185, 84, 0.4);
-}
-
-.auth-icon {
-    width: 20px;
-    height: 20px;
-    fill: currentColor;
-}
-
-.user-info {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 14px;
-    font-weight: 500;
-}
-
-.status-indicator {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #1db954;
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
-}
-
-/* Responsive adjustments */
-@media (max-width: 480px) {
-    .player-container {
-        padding: 30px 20px;
-    }
-    .album-art {
-        width: 200px;
-        height: 200px;
-    }
-    .song-title {
-        font-size: 20px;
-    }
-    .auth-btn, .web-control-btn {
-        width: 180px;
-        padding: 10px 20px;
-        font-size: 13px;
-    }
-    .web-control-btn {
-        width: 100%; /* Full width for smaller buttons on mobile */
-    }
-    .controls {
-        gap: 10px;
-    }
-    .control-btn {
-        width: 50px;
-        height: 50px;
-    }
-    .play-pause-btn {
-        width: 70px;
-        height: 70px;
-    }
-    .control-icon {
-        width: 20px;
-        height: 20px;
-    }
-    .play-pause-btn .control-icon {
-        width: 28px;
-        height: 28px;
-    }
+/* Flash Messages */
+.flash-message {
+    opacity: 1;
+    transition: opacity 0.5s ease-out;
 }
