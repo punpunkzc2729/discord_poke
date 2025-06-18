@@ -42,7 +42,7 @@
                 <p class="text-purple-200 text-lg">Get started by searching for a song!</p>
 
                 <div class="mt-8 w-full">
-                    <form action="{{ url_for('add_or_search_web_control', _external=True, _scheme='https') }}" method="post" class="flex flex-col md:flex-row gap-3 w-full">
+                    <form action="{{ url_for('add_search_web_control', _external=True, _scheme='https') }}" method="post" class="flex flex-col md:flex-row gap-3 w-full">
                         <input type="text" id="searchOrUrlInput" name="query" placeholder="ชื่อเพลง, ศิลปิน, หรือ URL (Spotify/YouTube)"
                                class="flex-grow p-3 rounded-lg bg-gray-600 border border-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder-gray-400">
                         <button type="submit" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg shadow-md font-semibold transition duration-300">
@@ -89,7 +89,7 @@
                 <div class="volume-control w-full max-w-xs flex items-center gap-3">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-volume-2 text-purple-200"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
                     <input type="range" id="volumeSlider" min="0" max="100" value="70" class="flex-grow">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-volume-x text-purple-200"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" x2="16" y1="9" y2="15"/><line x1="16" x2="22" y1="9" y2="15"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-volume-x-2 text-purple-200"><path d="M11 5 6 9H2v6h4l5 4V5z"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y2="9" x2="22" y2="15"/></svg>
                 </div>
             </div>
         </div>
@@ -150,7 +150,7 @@
             getAuthStatus: "{{ url_for('get_auth_status_api', _external=True, _scheme='https') }}",
             loginDiscord: "{{ url_for('login_discord', _external=True, _scheme='https') }}",
             loginSpotifyWeb: "{{ url_for('login_spotify_web', discord_user_id_param='__DISCORD_USER_ID__', _external=True, _scheme='https') }}", // Placeholder for user ID
-            addOrSearch: "{{ url_for('add_or_search_web_control', _external=True, _scheme='https') }}",
+            addOrSearch: "{{ url_for('add_search_web_control', _external=True, _scheme='https') }}", // Corrected endpoint name
             pauseControl: "{{ url_for('pause_web_control', _external=True, _scheme='https') }}",
             resumeControl: "{{ url_for('resume_web_control', _external=True, _scheme='https') }}",
             skipControl: "{{ url_for('skip_web_control', _external=True, _scheme='https') }}",
