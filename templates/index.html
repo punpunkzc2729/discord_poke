@@ -149,8 +149,8 @@
         const urls = {
             getAuthStatus: "{{ url_for('get_auth_status_api', _external=True, _scheme='https') }}",
             loginDiscord: "{{ url_for('login_discord', _external=True, _scheme='https') }}",
-            loginSpotifyWeb: "{{ url_for('login_spotify_web', discord_user_id_param='__DISCORD_USER_ID__', _external=True, _scheme='https') }}", // Placeholder for user ID
-            addOrSearch: "{{ url_for('add_search_web_control', _external=True, _scheme='https') }}", // Corrected endpoint name
+            // Removed loginSpotifyWeb as it's dynamically constructed in JS
+            addOrSearch: "{{ url_for('add_search_web_control', _external=True, _scheme='https') }}",
             pauseControl: "{{ url_for('pause_web_control', _external=True, _scheme='https') }}",
             resumeControl: "{{ url_for('resume_web_control', _external=True, _scheme='https') }}",
             skipControl: "{{ url_for('skip_web_control', _external=True, _scheme='https') }}",
