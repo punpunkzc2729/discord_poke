@@ -70,6 +70,8 @@ voice_client = None
 queue = []  # Music queue for playback (supports YouTube/SoundCloud URLs)
 current_playing_youtube_info = {} # Stores {'title', 'duration', 'thumbnail'} for YouTube/SoundCloud playback
 volume = 1.0 # Initial volume level
+is_shuffling = False
+is_looping = False
 
 # --- Global variables for Poll System (as per PRD) ---
 active_polls = {}
@@ -265,9 +267,17 @@ async def _after_playback_cleanup(error, channel_id):
     current_playing_youtube_info = {}
 
     # Check if the bot is still in the voice channel and not playing before calling _play_next_in_queue
-    if voice_client and voice_client.is_connected() and not voice_client.is_playing() and queue:
+    if voice_client and voice_client.is_connected() and not voice_client.is_playing():
         channel = bot.get_channel(channel_id)
         if channel:
+            # If looping, add the current song back to the beginning of the queue
+            if is_looping and current_playing_youtube_info:
+                queue.insert(0, current_playing_youtube_info.get('original_url'))
+                logging.info(f"Looping: Re-added {current_playing_youtube_info.get('title')} to queue.")
+            elif is_shuffling and queue:
+                random.shuffle(queue)
+                logging.info("Shuffling queue.")
+
             await _play_next_in_queue(channel)
     elif not queue and voice_client and voice_client.is_connected() and not voice_client.is_playing():
         logging.info("Music queue finished.")
@@ -339,6 +349,8 @@ async def _play_next_in_queue(channel: discord.VoiceChannel):
                 title = first_video_info.get('title', 'Unknown Title')
                 duration = first_video_info.get('duration', 0)
                 thumbnail = first_video_info.get('thumbnail', thumbnail)
+                # Store original URL for looping
+                original_url = first_video_url
             else:
                 raise Exception("Could not extract videos from playlist.")
             
@@ -347,13 +359,15 @@ async def _play_next_in_queue(channel: discord.VoiceChannel):
             title = info.get('title', 'Unknown Title')
             duration = info.get('duration', 0)
             thumbnail = info.get('thumbnail', thumbnail)
+            original_url = url_to_play
         else:
             raise Exception("No playable audio URL found.")
         
         current_playing_youtube_info = {
             'title': title,
             'duration': duration, # in seconds
-            'thumbnail': thumbnail
+            'thumbnail': thumbnail,
+            'original_url': original_url # Store original URL for looping
         }
         
         source = discord.FFmpegPCMAudio(audio_url, executable="ffmpeg")
@@ -472,7 +486,8 @@ async def leave(interaction: discord.Interaction):
 @tree.command(name="link_spotify", description="Links your Spotify account")
 async def link_spotify(interaction: discord.Interaction):
     # Pass base_url to user so the link works in any environment
-    base_url = request.url_root if request else "YOUR_APP_BASE_URL_HERE" 
+    # Ensure this URL is always HTTPS for the Discord message
+    base_url = url_for('index', _external=True, _scheme='https')
     await interaction.response.send_message(
         f"🔗 To link your Spotify account, please visit:\n"
         f"**{base_url}**\n"
@@ -730,7 +745,7 @@ class PollView(discord.ui.View):
         
         await message.edit(embed=embed, view=self)
 
-    async def _button_callback(self, interaction: discord.Interaction):
+    async def _button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
         custom_id = interaction.data['custom_id']
         parts = custom_id.split('_')
         if len(parts) != 3 or parts[0] != "poll":
@@ -937,11 +952,11 @@ async def discord_callback(): # Changed to async def
 
     if error:
         flash(f"❌ Discord OAuth error: {error}", "error")
-        return redirect(url_for("index"))
+        return redirect(url_for("index", _external=True, _scheme='https'))
 
     if not code:
         flash("❌ No authorization code received", "error")
-        return redirect(url_for("index"))
+        return redirect(url_for("index", _external=True, _scheme='https'))
 
     try:
         # Call _fetch_discord_token_and_user directly in Flask's async context
@@ -965,7 +980,7 @@ async def discord_callback(): # Changed to async def
         flash(f"❌ Error logging in with Discord: {e}", "error")
         logging.error(f"Discord OAuth error: {e}", exc_info=True)
     
-    return redirect(url_for("index")) 
+    return redirect(url_for("index", _external=True, _scheme='https')) 
 
 @app.route("/login/spotify/<int:discord_user_id_param>")
 async def login_spotify_web(discord_user_id_param: int): # Changed to async def
@@ -974,7 +989,7 @@ async def login_spotify_web(discord_user_id_param: int): # Changed to async def
 
     if logged_in_discord_user_id != discord_user_id_param:
         flash("❌ Discord User ID mismatch. Please log in with Discord again.", "error")
-        return redirect(url_for("index"))
+        return redirect(url_for("index", _external=True, _scheme='https'))
 
     auth_manager = SpotifyOAuth(
         client_id=SPOTIPY_CLIENT_ID,
@@ -997,11 +1012,11 @@ async def spotify_callback(): # Changed to async def
     
     if error:
         flash(f"❌ Spotify OAuth error: {error}", "error")
-        return redirect(url_for("index"))
+        return redirect(url_for("index", _external=True, _scheme='https'))
 
     if not code or not discord_user_id:
         flash("❌ Authorization code or Discord user ID for Spotify linking is missing. Please try again.", "error")
-        return redirect(url_for("index"))
+        return redirect(url_for("index", _external=True, _scheme='https'))
 
     try:
         auth_manager = SpotifyOAuth(
@@ -1026,15 +1041,14 @@ async def spotify_callback(): # Changed to async def
         flash(f"❌ Error linking Spotify: {e}. Please ensure your redirect URI is correct in Spotify Developer Dashboard.", "error")
         logging.error(f"Spotify callback error for user {discord_user_id}: {e}", exc_info=True)
     
-    return redirect(url_for("index"))
+    return redirect(url_for("index", _external=True, _scheme='https'))
 
 # --- Flask routes for controlling bot from web ---
-@app.route("/web_control/add", methods=["POST"])
-async def add_web_queue(): # Changed to async def
-    global voice_client, queue
-    url = request.form.get("url") # Receive data as form data
-    if not url:
-        return jsonify({"status": "error", "message": "No URL provided to add to queue."}), 400
+@app.route("/web_control/add_search", methods=["POST"]) # Renamed the route
+async def add_search_web_control(): # Renamed the function
+    query = request.form.get("query")
+    if not query:
+        return jsonify({"status": "error", "message": "No query provided."}), 400
 
     current_session_id = session.get('session_id')
     discord_user_id = web_logged_in_users.get(current_session_id)
@@ -1047,7 +1061,6 @@ async def add_web_queue(): # Changed to async def
         target_channel = voice_client.channel
     else:
         try:
-            # Wait until the bot is ready
             await bot_ready.wait() 
             user = bot.get_user(discord_user_id)
             if user and user.voice and user.voice.channel:
@@ -1062,99 +1075,84 @@ async def add_web_queue(): # Changed to async def
             else:
                 return jsonify({"status": "error", "message": "❌ You are not in a Discord voice channel or the bot cannot access it"}), 400
         except Exception as e:
-            logging.error(f"Error finding user's voice channel for web queue add: {e}", exc_info=True)
+            logging.error(f"Error finding user's voice channel for web queue add/search: {e}", exc_info=True)
             return jsonify({"status": "error", "message": f"❌ Error: {e}"}), 500
 
     if not target_channel:
         return jsonify({"status": "error", "message": "❌ Bot is not in a voice channel. Please use the `/join` command in Discord first."}), 400
 
-    queue.append(url)
-    logging.info(f"Added to queue from web: {url}")
+    # Determine if it's a Spotify link or a YouTube/general search
+    if "spotify.com/" in query:
+        sp_user = get_user_spotify_client(discord_user_id)
+        if not sp_user:
+            return jsonify({"status": "error", "message": "Please link your Spotify account first to play Spotify links."}), 403
 
-    if not voice_client.is_playing() and not voice_client.is_paused():
-        await _play_next_in_queue(target_channel) # Call directly in async context
+        try:
+            track_uris = []
+            context_uri = None
+            response_msg_title = ""
 
-    return jsonify({"status": "success", "message": f"Added '{url}' to the queue!"})
+            if "spotify.com/track/" in query:
+                track_id = query.split('/')[-1].split('?')[0]
+                track_uri = f"spotify:track:{track_id}"
+                track = await asyncio.to_thread(sp_user.track, track_uri)
+                track_uris.append(track_uri)
+                response_msg_title = f"**{track['name']}** by **{track['artists'][0]['name']}**"
+            elif "spotify.com/playlist/" in query:
+                playlist_id = query.split('/')[-1].split('?')[0]
+                context_uri = f"spotify:playlist:{playlist_id}"
+                playlist = await asyncio.to_thread(sp_user.playlist, playlist_id)
+                response_msg_title = f"Playlist: **{playlist['name']}**"
+            elif "spotify.com/album/" in query:
+                album_id = query.split('/')[-1].split('?')[0]
+                context_uri = f"spotify:album:{album_id}"
+                album = await asyncio.to_thread(sp_user.album, album_id)
+                response_msg_title = f"Album: **{album['name']}**"
+            else: # Should not happen if "spotify.com/" is checked, but as fallback
+                return jsonify({"status": "error", "message": "Invalid Spotify link provided."}), 400
 
-@app.route("/web_control/play_spotify_search", methods=["POST"])
-async def web_control_play_spotify_search():
-    query = request.form.get("query") # Receive as form data
-    if not query:
-        return jsonify({"status": "error", "message": "No search query provided."}), 400
-    
-    current_session_id = session.get('session_id')
-    discord_user_id = web_logged_in_users.get(current_session_id)
-    if not discord_user_id:
-        return jsonify({"status": "error", "message": "Please log in with Discord first to use Spotify music control."}), 401
+            devices = await asyncio.to_thread(sp_user.devices)
+            active_device_id = None
+            for device in devices['devices']:
+                if device['is_active']:
+                    active_device_id = device['id']
+                    break
+            
+            if not active_device_id:
+                return jsonify({"status": "error", "message": "No active Spotify client found. Please open your Spotify app and play something there first."}), 404
 
-    sp_user = get_user_spotify_client(discord_user_id)
-    if not sp_user:
-        return jsonify({"status": "error", "message": "Please link your Spotify account first."}), 403
+            if context_uri:
+                await asyncio.to_thread(sp_user.start_playback, device_id=active_device_id, context_uri=context_uri)
+            else:
+                await asyncio.to_thread(sp_user.start_playback, device_id=active_device_id, uris=track_uris)
+            
+            return jsonify({"status": "success", "message": f"Playing Spotify: {response_msg_title}"})
 
-    try:
-        track_uris = []
-        context_uri = None
-        response_msg_title = ""
+        except spotipy.exceptions.SpotifyException as e:
+            error_message = f"Spotify error: {e.msg}"
+            if e.http_status == 401:
+                error_message = "Spotify token expired. Please relink your account."
+                await update_user_data_in_firestore(discord_user_id, spotify_token_info=firestore.DELETE_FIELD)
+                if discord_user_id in spotify_users:
+                    del spotify_users[discord_user_id]
+            elif e.http_status == 404 and "Device not found" in str(e):
+                error_message = "No active Spotify client found. Please open your Spotify app."
+            elif e.http_status == 403:
+                error_message = "Spotify playback error: You might need a Spotify Premium account or have playback restrictions."
+            
+            logging.error(f"Spotify error for user {discord_user_id}: {e}", exc_info=True)
+            return jsonify({"status": "error", "message": error_message}), e.http_status or 500
+        except Exception as e:
+            logging.error(f"Unexpected error in web_control_play_spotify_search: {e}", exc_info=True)
+            return jsonify({"status": "error", "message": f"An unexpected error occurred: {e}"}), 500
+    else: # Treat as YouTube/general music queue
+        queue.append(query)
+        logging.info(f"Added to queue from web: {query}")
 
-        if "spotify.com/track/" in query:
-            track_id = query.split('/')[-1].split('?')[0]
-            track_uri = f"spotify:track:{track_id}"
-            track = await asyncio.to_thread(sp_user.track, track_uri)
-            track_uris.append(track_uri)
-            response_msg_title = f"**{track['name']}** by **{track['artists'][0]['name']}**"
-        elif "spotify.com/playlist/" in query:
-            playlist_id = query.split('/')[-1].split('?')[0]
-            context_uri = f"spotify:playlist:{playlist_id}"
-            playlist = await asyncio.to_thread(sp_user.playlist, playlist_id)
-            response_msg_title = f"Playlist: **{playlist['name']}**"
-        elif "spotify.com/album/" in query:
-            album_id = query.split('/')[-1].split('?')[0]
-            context_uri = f"spotify:album:{album_id}"
-            album = await asyncio.to_thread(sp_user.album, album_id)
-            response_msg_title = f"Album: **{album['name']}**"
-        else:
-            results = await asyncio.to_thread(sp_user.search, q=query, type='track', limit=1)
-            if not results['tracks']['items']:
-                return jsonify({"status": "error", "message": "No song found on Spotify."}), 404
-            track = results['tracks']['items'][0]
-            track_uris.append(track['uri'])
-            response_msg_title = f"**{track['name']}** by **{track['artists'][0]['name']}**"
+        if not voice_client.is_playing() and not voice_client.is_paused():
+            await _play_next_in_queue(target_channel)
 
-        devices = await asyncio.to_thread(sp_user.devices)
-        active_device_id = None
-        for device in devices['devices']:
-            if device['is_active']:
-                active_device_id = device['id']
-                break
-        
-        if not active_device_id:
-            return jsonify({"status": "error", "message": "No active Spotify client found. Please open your Spotify app and play something there first."}), 404
-
-        if context_uri:
-            await asyncio.to_thread(sp_user.start_playback, device_id=active_device_id, context_uri=context_uri)
-        else:
-            await asyncio.to_thread(sp_user.start_playback, device_id=active_device_id, uris=track_uris)
-        
-        return jsonify({"status": "success", "message": f"Playing Spotify: {response_msg_title}"})
-
-    except spotipy.exceptions.SpotifyException as e:
-        error_message = f"Spotify error: {e.msg}"
-        if e.http_status == 401:
-            error_message = "Spotify token expired. Please relink your account."
-            # Clear token in Firestore
-            await update_user_data_in_firestore(discord_user_id, spotify_token_info=firestore.DELETE_FIELD)
-            if discord_user_id in spotify_users:
-                del spotify_users[discord_user_id]
-        elif e.http_status == 404 and "Device not found" in str(e):
-            error_message = "No active Spotify client found. Please open your Spotify app."
-        elif e.http_status == 403:
-            error_message = "Spotify playback error: You might need a Spotify Premium account or have playback restrictions."
-        
-        logging.error(f"Spotify error for user {discord_user_id}: {e}", exc_info=True)
-        return jsonify({"status": "error", "message": error_message}), e.http_status or 500
-    except Exception as e:
-        logging.error(f"Unexpected error in web_control_play_spotify_search: {e}", exc_info=True)
-        return jsonify({"status": "error", "message": f"An unexpected error occurred: {e}"}), 500
+        return jsonify({"status": "success", "message": f"Added '{query}' to the queue!"})
 
 
 @app.route("/web_control/pause")
@@ -1303,6 +1301,30 @@ async def set_volume_web_control(): # Changed to async def
         logging.error(f"Error adjusting volume from web: {e}", exc_info=True)
         return jsonify({"status": "error", "message": f"An unexpected error occurred: {e}"}), 500
 
+@app.route("/web_control/toggle_shuffle", methods=["POST"])
+async def toggle_shuffle_web_control():
+    global is_shuffling
+    is_shuffling = not is_shuffling
+    if is_shuffling:
+        # Shuffle the current queue
+        random.shuffle(queue)
+        logging.info("Shuffle enabled. Queue shuffled.")
+        return jsonify({"status": "success", "message": "Shuffle enabled and queue shuffled.", "is_shuffling": is_shuffling})
+    else:
+        logging.info("Shuffle disabled.")
+        return jsonify({"status": "success", "message": "Shuffle disabled.", "is_shuffling": is_shuffling})
+
+@app.route("/web_control/toggle_loop", methods=["POST"])
+async def toggle_loop_web_control():
+    global is_looping
+    is_looping = not is_looping
+    if is_looping:
+        logging.info("Loop enabled.")
+        return jsonify({"status": "success", "message": "Loop enabled.", "is_looping": is_looping})
+    else:
+        logging.info("Loop disabled.")
+        return jsonify({"status": "success", "message": "Loop disabled.", "is_looping": is_looping})
+
 
 # --- New API Endpoints for Web UI Data ---
 @app.route("/api/now_playing_data")
@@ -1311,81 +1333,110 @@ async def get_now_playing_data():
     discord_user_id = web_logged_in_users.get(current_session_id)
 
     if not discord_user_id:
-        return jsonify({"status": "not_logged_in"}), 200 # Return 200 with status for UI to handle
+        # If not logged in with Discord, return a clear status
+        return jsonify({
+            "status": "not_logged_in",
+            "is_playing": False,
+            "is_paused": False,
+            "is_shuffling": is_shuffling,
+            "is_looping": is_looping,
+            "volume": volume
+        }), 200
 
     sp_user = get_user_spotify_client(discord_user_id)
+    
+    # Check Spotify playback first
     if sp_user:
         try:
-            # Fetch current Spotify playback state
             playback_state = await asyncio.to_thread(sp_user.current_playback)
             if playback_state and playback_state['is_playing']:
                 track = playback_state['item']
-                progress_ms = playback_state['progress_ms']
-                duration_ms = track['duration_ms']
-                
                 return jsonify({
                     "status": "playing_spotify",
                     "title": track['name'],
                     "artist": track['artists'][0]['name'],
                     "album_cover_url": track['album']['images'][0]['url'] if track['album']['images'] else "https://placehold.co/400x400/3498db/ffffff?text=No+Cover",
-                    "progress_ms": progress_ms,
-                    "duration_ms": duration_ms
+                    "progress_ms": playback_state['progress_ms'],
+                    "duration_ms": track['duration_ms'],
+                    "is_playing": True,
+                    "is_paused": False,
+                    "is_shuffling": is_shuffling,
+                    "is_looping": is_looping,
+                    "volume": volume
                 })
-            else:
-                # If Spotify is paused/stopped, but bot queue is playing
-                if voice_client and voice_client.is_playing() and current_playing_youtube_info:
-                     return jsonify({
-                        "status": "playing_youtube",
-                        "title": current_playing_youtube_info.get('title', 'Unknown Title'),
-                        "artist": "YouTube/SoundCloud", # Or get uploader if available from yt_dlp info
-                        "album_cover_url": current_playing_youtube_info.get('thumbnail', 'https://placehold.co/400x400/FF0000/FFFFFF?text=YouTube'),
-                        "progress_ms": voice_client.source.play_time * 1000 if voice_client.source else 0, # Approximate progress
-                        "duration_ms": current_playing_youtube_info.get('duration', 0) * 1000
-                    })
-                return jsonify({"status": "spotify_paused_or_stopped"})
+            elif playback_state: # Spotify is paused
+                 return jsonify({
+                    "status": "spotify_paused",
+                    "title": playback_state['item']['name'],
+                    "artist": playback_state['item']['artists'][0]['name'],
+                    "album_cover_url": playback_state['item']['album']['images'][0]['url'] if playback_state['item']['album']['images'] else "https://placehold.co/400x400/3498db/ffffff?text=No+Cover",
+                    "progress_ms": playback_state['progress_ms'],
+                    "duration_ms": playback_state['item']['duration_ms'],
+                    "is_playing": False,
+                    "is_paused": True,
+                    "is_shuffling": is_shuffling,
+                    "is_looping": is_looping,
+                    "volume": volume
+                })
         except spotipy.exceptions.SpotifyException as e:
             logging.error(f"Spotify API error fetching playback for {discord_user_id}: {e}")
-            # Consider unlinking Spotify if 401 error (expired token)
             if e.http_status == 401:
-                 # Schedule to run in bot's loop to update Firestore
                 asyncio.run_coroutine_threadsafe(
                     update_user_data_in_firestore(discord_user_id, spotify_token_info=firestore.DELETE_FIELD),
                     bot.loop
                 )
                 if discord_user_id in spotify_users:
                     del spotify_users[discord_user_id]
-                return jsonify({"status": "spotify_error", "message": "Spotify token expired. Please relink."}), 200 # Return 200, UI handles error status
-            return jsonify({"status": "spotify_error", "message": str(e)}), 200
+                return jsonify({"status": "spotify_error", "message": "Spotify token expired. Please relink.", "is_playing": False, "is_paused": False, "is_shuffling": is_shuffling, "is_looping": is_looping, "volume": volume}), 200
+            return jsonify({"status": "spotify_error", "message": str(e), "is_playing": False, "is_paused": False, "is_shuffling": is_shuffling, "is_looping": is_looping, "volume": volume}), 200
         except Exception as e:
             logging.error(f"Unexpected error fetching Spotify playback for {discord_user_id}: {e}")
-            return jsonify({"status": "error", "message": "Failed to fetch Spotify playback."}), 200
+            return jsonify({"status": "error", "message": "Failed to fetch Spotify playback.", "is_playing": False, "is_paused": False, "is_shuffling": is_shuffling, "is_looping": is_looping, "volume": volume}), 200
     
-    # If not playing Spotify, check bot's internal queue playback (YouTube/SoundCloud)
-    if voice_client and voice_client.is_playing() and current_playing_youtube_info:
+    # If Spotify is not playing/linked, check bot's internal queue playback (YouTube/SoundCloud)
+    if voice_client and (voice_client.is_playing() or voice_client.is_paused()) and current_playing_youtube_info:
         return jsonify({
             "status": "playing_youtube",
             "title": current_playing_youtube_info.get('title', 'Unknown Title'),
-            "artist": "YouTube/SoundCloud", # Or get uploader if available from yt_dlp info
+            "artist": "YouTube/SoundCloud", 
             "album_cover_url": current_playing_youtube_info.get('thumbnail', 'https://placehold.co/400x400/FF0000/FFFFFF?text=YouTube'),
             "progress_ms": voice_client.source.play_time * 1000 if voice_client.source else 0, # Approximate progress
-            "duration_ms": current_playing_youtube_info.get('duration', 0) * 1000
+            "duration_ms": current_playing_youtube_info.get('duration', 0) * 1000,
+            "is_playing": voice_client.is_playing(),
+            "is_paused": voice_client.is_paused(),
+            "is_shuffling": is_shuffling,
+            "is_looping": is_looping,
+            "volume": volume
         })
     elif voice_client and voice_client.is_paused() and current_playing_youtube_info:
          return jsonify({
             "status": "youtube_paused",
             "title": current_playing_youtube_info.get('title', 'Unknown Title'),
-            "artist": "YouTube/SoundCloud", # Or get uploader if available from yt_dlp info
+            "artist": "YouTube/SoundCloud", 
             "album_cover_url": current_playing_youtube_info.get('thumbnail', 'https://placehold.co/400x400/FF0000/FFFFFF?text=YouTube'),
             "progress_ms": voice_client.source.play_time * 1000 if voice_client.source else 0, # Approximate progress
-            "duration_ms": current_playing_youtube_info.get('duration', 0) * 1000
+            "duration_ms": current_playing_youtube_info.get('duration', 0) * 1000,
+            "is_playing": False,
+            "is_paused": True,
+            "is_shuffling": is_shuffling,
+            "is_looping": is_looping,
+            "volume": volume
         })
     
-    return jsonify({"status": "no_music_playing"})
+    # No music is playing anywhere
+    return jsonify({
+        "status": "no_music_playing",
+        "is_playing": False,
+        "is_paused": False,
+        "is_shuffling": is_shuffling,
+        "is_looping": is_looping,
+        "volume": volume
+    })
 
 @app.route("/api/queue_data")
 async def get_queue_data():
-    # Return the global queue list (which stores URLs)
-    # For simplicity, we return URLs only as PRD doesn't specify complex queue display
+    # For now, just return the global queue list.
+    # If detailed info needed for each item, would need to store more in queue.
     return jsonify({"queue": queue}) 
 
 
