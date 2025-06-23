@@ -54,9 +54,10 @@ if not firebase_credentials_base64:
     logging.error("FIREBASE_CREDENTIALS_BASE64 environment variable not set. Firestore will not work.")
 else:
     try:
+        # Fixed typo here: firebase_credentials_base64 instead of firebase_credentials_base66
         decoded_credentials = base64.b64decode(firebase_credentials_base64).decode('utf-8')
         cred = credentials.Certificate(json.loads(decoded_credentials))
-        firebase_admin.initialize_app(cred)
+        firebase_admin.initializeApp(cred)
         db = firestore.client()
         logging.info("Firebase Admin SDK initialized successfully.")
     except Exception as e:
@@ -870,31 +871,15 @@ async def index():
             logging.error(f"Error checking Spotify link status for web user {discord_user_id}: {e}")
             is_spotify_linked = False
 
-    # Get environment variables for Firebase, APP_ID, and Auth Token
-    # Use .get() with a default value to prevent errors if variables are not set
-    # firebaseConfig should be JSON parsed from the string provided by the environment
-    firebase_config_str = os.getenv("FIREBASE_CONFIG")
-    firebase_config = {}
-    if firebase_config_str:
-        try:
-            firebase_config = json.loads(firebase_config_str)
-        except json.JSONDecodeError as e:
-            logging.error(f"Error decoding FIREBASE_CONFIG: {e}", exc_info=True)
-            firebase_config = {} # Fallback to empty dict
-
-    app_id_env = os.getenv("APP_ID", "default-app-id-from-env") # Fallback for APP_ID
-    initial_auth_token = os.getenv("INITIAL_AUTH_TOKEN", None) # Fallback for token
-
+    # Removed passing firebase_config, app_id, initial_auth_token to template
+    # as these are now accessed directly from Canvas global JS variables.
     return render_template(
         "index.html",
         is_discord_linked=is_discord_linked,
         discord_user_id=discord_user_id,
         discord_username=discord_username,
         is_spotify_linked=is_spotify_linked,
-        base_url=request.url_root, # Pass base_url to the template
-        firebase_config=firebase_config, # Pass Firebase config
-        app_id=app_id_env, # Pass app ID
-        initial_auth_token=initial_auth_token # Pass initial auth token
+        base_url=request.url_root # Pass base_url to the template
     )
 
 
@@ -1044,8 +1029,8 @@ async def spotify_callback(): # Changed to async def
     return redirect(url_for("index", _external=True, _scheme='https'))
 
 # --- Flask routes for controlling bot from web ---
-@app.route("/web_control/add_search", methods=["POST"]) # Renamed the route
-async def add_search_web_control(): # Renamed the function
+@app.route("/web_control/add_search", methods=["POST"])
+async def add_search_web_control():
     query = request.form.get("query")
     if not query:
         return jsonify({"status": "error", "message": "No query provided."}), 400
