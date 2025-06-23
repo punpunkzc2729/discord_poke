@@ -2,12 +2,12 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
-from gtts import gTTS
+from gtts import gTTS 
 import os
 import threading
 import logging
 import json
-import base64
+import base64 
 from dotenv import load_dotenv
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
@@ -19,7 +19,7 @@ import random
 # Firestore imports
 import firebase_admin
 from firebase_admin import credentials, firestore
-from firebase_admin import exceptions as firebase_exceptions
+from firebase_admin import exceptions as firebase_exceptions 
 
 # ปิดข้อความรายงานบั๊กของ yt_dlp เพื่อไม่ให้แสดงในคอนโซล
 yt_dlp.utils.bug_reports_message = lambda: ''
@@ -28,141 +28,172 @@ yt_dlp.utils.bug_reports_message = lambda: ''
 load_dotenv()
 
 # --- ข้อมูลประจำตัว Spotify API ---
+# ควรตั้งค่าในไฟล์ .env
 SPOTIPY_CLIENT_ID = os.getenv("SPOTIPY_CLIENT_ID")
 SPOTIPY_CLIENT_SECRET = os.getenv("SPOTIPY_CLIENT_SECRET")
 SPOTIPY_REDIRECT_URI = os.getenv("SPOTIPY_REDIRECT_URI")
+# Scopes ที่จำเป็นสำหรับ Spotify API
 SPOTIPY_SCOPES = "user-read-playback-state user-modify-playback-state user-read-currently-playing playlist-read-private playlist-read-collaborative user-library-read"
 
 # --- ข้อมูลประจำตัว Discord Bot ---
+# ควรตั้งค่าในไฟล์ .env
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-# ตรวจสอบ GUILD_ID ให้แน่ใจว่าเป็นตัวเลขเท่านั้นและไม่มีช่องว่างหรือ #
-try:
-    YOUR_GUILD_ID = int(os.environ["GUILD_ID"].strip().split('#')[0])
-except (KeyError, ValueError):
-    logging.error("GUILD_ID environment variable is missing or invalid. Please set it to your Discord server ID.")
-    YOUR_GUILD_ID = None # ตั้งค่าเป็น None หรือ ID ทดสอบหากไม่มี
-
+# ตรวจสอบให้แน่ใจว่า GUILD_ID ในไฟล์ .env เป็นตัวเลขล้วนๆ เพื่อหลีกเลี่ยง ValueError
+# เพิ่ม .strip().split('#')[0] เพื่อจัดการคอมเมนต์หรือช่องว่างในไฟล์ .env
+YOUR_GUILD_ID = int(os.environ["GUILD_ID"].strip().split('#')[0]) 
 DISCORD_CLIENT_ID = os.getenv("DISCORD_CLIENT_ID")
 DISCORD_CLIENT_SECRET = os.getenv("DISCORD_CLIENT_SECRET")
 DISCORD_REDIRECT_URI = os.getenv("DISCORD_REDIRECT_URI")
+# Scopes ที่จำเป็นสำหรับ Discord OAuth2
 DISCORD_OAUTH_SCOPES = "identify guilds"
 
 # --- Firebase Setup ---
+# ข้อมูลรับรอง Firebase ที่เข้ารหัส Base64 ควรอยู่ในตัวแปรสภาพแวดล้อม
 firebase_credentials_base64 = os.getenv("FIREBASE_CREDENTIALS_BASE64")
-db = None
+db = None # กำหนด db เป็น None เริ่มต้น
 if not firebase_credentials_base64:
     logging.error("FIREBASE_CREDENTIALS_BASE64 environment variable not set. Firestore will not work.")
 else:
     try:
-        # Fixed typo here: firebase_credentials_base64 instead of firebase_credentials_base66
+        # ถอดรหัสข้อมูลรับรอง base64 และแยกวิเคราะห์ JSON
         decoded_credentials = base64.b64decode(firebase_credentials_base64).decode('utf-8')
         cred = credentials.Certificate(json.loads(decoded_credentials))
-        firebase_admin.initializeApp(cred)
+        firebase_admin.initialize_app(cred)
         db = firestore.client()
         logging.info("Firebase Admin SDK initialized successfully.")
     except Exception as e:
         logging.error(f"ข้อผิดพลาดในการเริ่มต้น Firebase Admin SDK: {e}", exc_info=True)
-        db = None
+        db = None # ตั้งค่า db เป็น None หากเริ่มต้นล้มเหลว
 
-# --- Global Variables ---
-spotify_users = {}  # Key: Discord User ID, Value: Spotify client object
+# --- ตัวแปร Global ---
+# เก็บ Spotify client object สำหรับแต่ละ Discord user ID
+spotify_users = {}  # Key: Discord User ID, Value: Spotify client
+# เก็บการเชื่อมโยง Flask session ID กับ Discord user ID สำหรับการควบคุมผ่านเว็บ
 web_logged_in_users = {}  # Key: Flask Session ID, Value: Discord User ID
-voice_client = None
-queue = []  # Music queue for playback (supports YouTube/SoundCloud URLs)
-current_playing_youtube_info = {} # Stores {'title', 'duration', 'thumbnail'} for YouTube/SoundCloud playback
-volume = 1.0 # Initial volume level
-is_shuffling = False
-is_looping = False
+voice_client = None # Object สำหรับการจัดการการเชื่อมต่อช่องเสียงของ Discord
+queue = []  # คิวเพลงสำหรับเล่น (รองรับ YouTube/SoundCloud URL)
+volume = 1.0 # ระดับเสียงเริ่มต้น (0.0 ถึง 2.0)
 
-# --- Global variables for Poll System (as per PRD) ---
+# --- ตัวแปร Global สำหรับระบบโพลล์ ---
+# Key: poll_message_id, Value: {"question": str, "options": list[str], "votes": {option_str: set[user_id]}}
 active_polls = {}
 
-# --- Logging Setup ---
+# --- ตั้งค่าการบันทึก Log ---
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s:%(levelname)s:%(message)s',
+    level=logging.INFO, # ระดับ Log ขั้นต่ำที่แสดง
+    format='%(asctime)s:%(levelname)s:%(message)s', # รูปแบบของข้อความ Log
     handlers=[
-        logging.FileHandler("bot.log"),
-        logging.StreamHandler()
+        logging.FileHandler("bot.log"), # บันทึก Log ลงไฟล์
+        logging.StreamHandler() # แสดง Log ในคอนโซล
     ]
 )
 
-# --- Discord Bot Setup ---
-intents = discord.Intents.default()
-intents.message_content = True
-intents.voice_states = True
-intents.members = True # Requires Privileged Intent in Discord Developer Portal!
+# --- ตั้งค่า Discord Bot ---
+# Intents ที่จำเป็นสำหรับบอท Discord
+intents = discord.Intents.default() 
+intents.message_content = True 
+intents.voice_states = True 
+intents.members = True 
 
-bot = commands.Bot(command_prefix="!", intents=intents)
-tree = bot.tree
-bot_ready = asyncio.Event()
+bot = commands.Bot(command_prefix="!", intents=intents) # สร้าง Instance ของบอท
+tree = bot.tree # สำหรับการจัดการ Slash Commands
+bot_ready = asyncio.Event() # Event สำหรับส่งสัญญาณเมื่อบอทพร้อมใช้งานเต็มที่
 
-# --- Flask App Setup ---
-# Set template_folder for Jinja2 templates and static_folder for static files (JS, CSS)
-app = Flask(__name__, template_folder="templates", static_folder="static")
+# --- ตั้งค่า Flask App ---
+app = Flask(__name__, static_folder="static", template_folder="templates") # สร้าง Instance ของ Flask App
+# คีย์ลับสำหรับ Flask session ควรตั้งค่าในไฟล์ .env เพื่อความปลอดภัย
 app.secret_key = os.getenv("FLASK_SECRET_KEY") or os.urandom(24) 
 
-# --- Helper functions for Firestore Persistence (as per PRD) ---
+# --- ฟังก์ชันช่วย (Helper Functions) ---
+
+def get_user_spotify_client(discord_user_id: int):
+    """
+    ดึง Spotify client สำหรับผู้ใช้ Discord
+    ตรวจสอบการหมดอายุของโทเค็นโดยพยายามเรียก API ง่ายๆ และลบออกหากไม่ถูกต้อง
+    """
+    sp_client = spotify_users.get(discord_user_id)
+    if sp_client:
+        try:
+            # ทดสอบว่าโทเค็นยังใช้ได้หรือไม่
+            sp_client.current_user() 
+            return sp_client
+        except spotipy.exceptions.SpotifyException as e:
+            logging.warning(f"Spotify token expired for user {discord_user_id}: {e}")
+            # ถ้าโทเค็นหมดอายุ ให้ลบออกจากแคชของเราและ Firestore
+            if discord_user_id in spotify_users:
+                del spotify_users[discord_user_id]
+                # ลบฟิลด์ spotify_token_info จาก Firestore
+                asyncio.run_coroutine_threadsafe(
+                    update_user_data_in_firestore(discord_user_id, spotify_token_info=firestore.DELETE_FIELD),
+                    bot.loop
+                ).result()
+            return None
+    return None
+
 async def update_user_data_in_firestore(discord_user_id: int, spotify_token_info: dict = None, flask_session_to_add: str = None, flask_session_to_remove: str = None):
     """
-    Updates user data in Firestore, including Spotify tokens and Flask sessions.
+    อัปเดตข้อมูลผู้ใช้ใน Firestore รวมถึงโทเค็น Spotify และเซสชัน Flask
+    :param discord_user_id: ID ผู้ใช้ Discord (ใช้เป็น document ID)
+    :param spotify_token_info: dict ข้อมูลโทเค็นจาก Spotipy หรือ firestore.DELETE_FIELD (เป็นทางเลือก)
+    :param flask_session_to_add: Flask session ID ที่จะเพิ่ม (เป็นทางเลือก)
+    :param flask_session_to_remove: Flask session ID ที่จะลบ (เป็นทางเลือก)
     """
     if db is None:
-        logging.error("Firestore DB not initialized. Cannot update user data.")
+        logging.error("Firestore DB is not initialized. Cannot update user data.")
         return
 
     user_ref = db.collection('users').document(str(discord_user_id))
     user_data_to_update = {}
 
     try:
-        # Use run_in_executor for potentially blocking Firestore API calls
         doc = await asyncio.to_thread(user_ref.get)
         current_data = doc.to_dict() if doc.exists else {}
     except firebase_exceptions.FirebaseError as e:
         logging.error(f"Error fetching user {discord_user_id} data from Firestore: {e}", exc_info=True)
         return
 
-    if spotify_token_info:
-        # If spotify_token_info is firestore.DELETE_FIELD, delete the field
-        if spotify_token_info == firestore.DELETE_FIELD:
-            user_data_to_update['spotify_token_info'] = firestore.DELETE_FIELD
-        else:
-            user_data_to_update['spotify_token_info'] = spotify_token_info
+    if spotify_token_info is not None: # ตรวจสอบว่าเป็น None จริงๆ (ไม่รวม firestore.DELETE_FIELD)
+        user_data_to_update['spotify_token_info'] = spotify_token_info
     
-    flask_sessions = set(current_data.get('flask_sessions', []))
+    # จัดการ Flask sessions เป็น set เพื่อหลีกเลี่ยงค่าซ้ำ
+    flask_sessions = set(current_data.get('flask_sessions', [])) 
 
     if flask_session_to_add:
         flask_sessions.add(flask_session_to_add)
     if flask_session_to_remove and flask_session_to_remove in flask_sessions:
         flask_sessions.remove(flask_session_to_remove)
 
+    # แปลง set กลับเป็น list สำหรับ Firestore
     user_data_to_update['flask_sessions'] = list(flask_sessions)
 
-    if user_data_to_update:
+    if user_data_to_update: # อัปเดตเฉพาะเมื่อมีข้อมูลที่จะตั้งค่า
         try:
+            # ใช้ set with merge=True เพื่ออัปเดตฟิลด์เฉพาะโดยไม่เขียนทับเอกสารทั้งหมด
             await asyncio.to_thread(user_ref.set, user_data_to_update, merge=True)
-            logging.info(f"User data {discord_user_id} updated in Firestore.")
+            logging.info(f"ข้อมูลผู้ใช้ {discord_user_id} อัปเดตใน Firestore แล้ว.")
         except firebase_exceptions.FirebaseError as e:
-            logging.error(f"Error updating user {discord_user_id} data in Firestore: {e}", exc_info=True)
+            logging.error(f"ข้อผิดพลาดในการอัปเดตข้อมูลผู้ใช้ {discord_user_id} ใน Firestore: {e}", exc_info=True)
 
 async def load_all_user_data_from_firestore():
     """
-    Loads all user data (Spotify tokens, Flask sessions) from Firestore into global variables.
+    โหลดข้อมูลผู้ใช้ทั้งหมด (โทเค็น Spotify, เซสชัน Flask) จาก Firestore เข้าสู่ตัวแปร global
+    เพื่อฟื้นฟูสถานะเมื่อบอทเริ่มต้น
     """
-    global spotify_users, web_logged_in_users
+    global spotify_users, web_logged_in_users 
 
     if db is None:
-        logging.warning("Firestore DB not initialized. Cannot load user data.")
+        logging.warning("Firestore DB is not initialized. Cannot load user data.")
         return
 
     try:
         users_ref = db.collection('users')
-        docs = await asyncio.to_thread(users_ref.get) # Use asyncio.to_thread
+        docs = await asyncio.to_thread(users_ref.get) # ดึงเอกสารผู้ใช้ทั้งหมด
 
         for doc in docs:
             user_id = int(doc.id)
             data = doc.to_dict()
             
+            # โหลดข้อมูลโทเค็น Spotify
             token_info = data.get('spotify_token_info')
             if token_info:
                 auth_manager = SpotifyOAuth(
@@ -174,63 +205,57 @@ async def load_all_user_data_from_firestore():
                 auth_manager.set_cached_token(token_info)
                 sp_user = spotipy.Spotify(auth_manager=auth_manager)
                 try:
-                    await asyncio.to_thread(sp_user.current_user) # Validate token
+                    # ตรวจสอบโทเค็นโดยการเรียกใช้ API ง่ายๆ
+                    await asyncio.to_thread(sp_user.current_user)
                     spotify_users[user_id] = sp_user
-                    logging.info(f"Loaded valid Spotify token for user ID: {user_id} from Firestore.")
-                except spotipy.exceptions.SpotifyException as e:
-                    logging.warning(f"Spotify token for user {user_id} expired on startup (Firestore): {e}. Removing from local cache and Firestore.")
-                    # Remove expired Spotify token data from Firestore
-                    await update_user_data_in_firestore(user_id, spotify_token_info=firestore.DELETE_FIELD)
-                    if user_id in spotify_users:
-                        del spotify_users[user_id]
+                    logging.info(f"โหลดโทเค็น Spotify ที่ถูกต้องสำหรับผู้ใช้ ID: {user_id} จาก Firestore แล้ว")
+                except spotipy.exceptions.SpotifyException:
+                    logging.warning(f"โทเค็น Spotify สำหรับผู้ใช้ {user_id} หมดอายุเมื่อเริ่มต้น (Firestore) ลบออกจากแคชในเครื่อง.")
+                    # คุณอาจต้องการลบออกจาก Firestore ที่นี่ด้วยหากไม่ถูกต้องอย่างสม่ำเสมอ
+                    # await update_user_data_in_firestore(user_id, spotify_token_info=firestore.DELETE_FIELD)
                 except Exception as e:
-                    logging.error(f"Error validating loaded Spotify token for user {user_id}: {e}", exc_info=True)
+                    logging.error(f"ข้อผิดพลาดในการตรวจสอบโทเค็น Spotify ที่โหลดสำหรับผู้ใช้ {user_id}: {e}", exc_info=True)
 
+            # โหลด Flask sessions
             flask_sessions_list = data.get('flask_sessions', [])
             for session_id in flask_sessions_list:
                 web_logged_in_users[session_id] = user_id
             
-        logging.info("All user data (Spotify tokens and Flask sessions) loaded from Firestore.")
+        logging.info("โหลดข้อมูลผู้ใช้ทั้งหมด (โทเค็น Spotify และเซสชัน Flask) จาก Firestore แล้ว.")
     except firebase_exceptions.FirebaseError as e:
-        logging.error(f"Error loading all user data from Firestore: {e}", exc_info=True)
+        logging.error(f"ข้อผิดพลาดในการโหลดข้อมูลผู้ใช้ทั้งหมดจาก Firestore: {e}", exc_info=True)
     except Exception as e:
-        logging.error(f"Unexpected error loading user data from Firestore: {e}", exc_info=True)
+        logging.error(f"ข้อผิดพลาดที่ไม่คาดคิดในการโหลดข้อมูลผู้ใช้จาก Firestore: {e}", exc_info=True)
 
-
-def get_user_spotify_client(discord_user_id: int):
-    """
-    Retrieves the Spotify client for a Discord user.
-    This function only retrieves from cache, it does not validate the token immediately.
-    Token validation should be done in an async context using _check_spotify_link_status.
-    """
-    return spotify_users.get(discord_user_id)
 
 async def _check_spotify_link_status(discord_user_id: int) -> bool:
     """
-    Checks the user's Spotify linking status by validating the token.
+    ตรวจสอบสถานะการเชื่อมโยง Spotify ของผู้ใช้
     """
-    await bot_ready.wait() # Wait until the bot loop is running
     sp_client = spotify_users.get(discord_user_id)
     if sp_client:
         try:
-            await asyncio.to_thread(sp_client.current_user) # Validate Token asynchronously
+            # ทำการเรียก Spotify API เล็กน้อยเพื่อตรวจสอบโทเค็น
+            await asyncio.to_thread(sp_client.current_user)
             return True
         except spotipy.exceptions.SpotifyException as e:
-            logging.warning(f"Spotify token expired for user {discord_user_id}: {e}")
+            logging.warning(f"ตรวจสอบโทเค็น Spotify ล้มเหลวสำหรับผู้ใช้ {discord_user_id}: {e}")
+            # หากโทเค็นหมดอายุ ให้ลบออกจากแคชและ Firestore
             if discord_user_id in spotify_users:
                 del spotify_users[discord_user_id]
                 await update_user_data_in_firestore(discord_user_id, spotify_token_info=firestore.DELETE_FIELD)
             return False
         except Exception as e:
-            logging.error(f"Unexpected error during Spotify token check for user {discord_user_id}: {e}", exc_info=True)
+            logging.error(f"ข้อผิดพลาดที่ไม่คาดคิดระหว่างการตรวจสอบโทเค็น Spotify สำหรับผู้ใช้ {discord_user_id}: {e}", exc_info=True)
             return False
     return False
 
 async def _fetch_discord_token_and_user(code: str):
     """
-    Exchanges the Discord authorization code for tokens and user data.
+    แลกเปลี่ยนรหัสอนุญาต Discord เพื่อรับโทเค็นและข้อมูลผู้ใช้
     """
     async with httpx.AsyncClient() as client:
+        # แลกเปลี่ยนรหัสอนุญาตสำหรับโทเค็น
         token_response = await client.post(
             "https://discord.com/api/oauth2/token",
             data={
@@ -243,302 +268,284 @@ async def _fetch_discord_token_and_user(code: str):
             },
             headers={"Content-Type": "application/x-www-form-urlencoded"}
         )
-        token_response.raise_for_status()
+        token_response.raise_for_status() # Raise an exception for HTTP errors
         token_info = token_response.json()
 
+        # ใช้ access token เพื่อดึงข้อมูลผู้ใช้
         user_response = await client.get(
             "https://discord.com/api/users/@me",
             headers={
                 "Authorization": f"Bearer {token_info['access_token']}"
             }
         )
-        user_response.raise_for_status()
+        user_response.raise_for_status() # Raise an exception for HTTP errors
         user_data = user_response.json()
         return token_info, user_data
 
+# ฟังก์ชัน Callback สำหรับหลังจากเล่นเสียงเสร็จสิ้น
 async def _after_playback_cleanup(error, channel_id):
-    global current_playing_youtube_info
+    """
+    จัดการหลังจากเล่นเสียงเสร็จสิ้น, รวมถึงการจัดการข้อผิดพลาดและการเล่นเพลงถัดไปในคิว
+    """
     if error:
-        logging.error(f"Error during audio playback: {error}")
+        logging.error(f"ข้อผิดพลาดในการเล่นเสียง: {error}")
         channel = bot.get_channel(channel_id)
         if channel:
-            await channel.send(f"❌ An error occurred during playback: {error}")
+            await channel.send(f"❌ เกิดข้อผิดพลาดระหว่างเล่น: {error}")
     
-    # Clear now playing info
-    current_playing_youtube_info = {}
-
-    # Check if the bot is still in the voice channel and not playing before calling _play_next_in_queue
-    if voice_client and voice_client.is_connected() and not voice_client.is_playing():
+    # พยายามเล่นเพลงถัดไปในคิว
+    if queue and voice_client and voice_client.is_connected() and not voice_client.is_playing():
         channel = bot.get_channel(channel_id)
         if channel:
-            # If looping, add the current song back to the beginning of the queue
-            if is_looping and current_playing_youtube_info:
-                queue.insert(0, current_playing_youtube_info.get('original_url'))
-                logging.info(f"Looping: Re-added {current_playing_youtube_info.get('title')} to queue.")
-            elif is_shuffling and queue:
-                random.shuffle(queue)
-                logging.info("Shuffling queue.")
-
             await _play_next_in_queue(channel)
     elif not queue and voice_client and voice_client.is_connected() and not voice_client.is_playing():
-        logging.info("Music queue finished.")
+        logging.info("คิวเพลงเล่นเสร็จสิ้น.")
         channel = bot.get_channel(channel_id)
         if channel:
-            await channel.send("✅ Finished playing all songs in the queue!")
+            await channel.send("✅ เล่นเพลงในคิวทั้งหมดแล้ว!")
 
 
 async def _play_next_in_queue(channel: discord.VoiceChannel):
-    """Plays the next song in the queue, supporting YouTube/SoundCloud URLs."""
-    global voice_client, queue, volume, current_playing_youtube_info
+    """เล่นเพลงถัดไปในคิว รองรับ URL ของ YouTube/SoundCloud"""
+    global voice_client, queue, volume
 
     if not voice_client or not voice_client.is_connected():
-        logging.warning("Bot is not in a voice channel to play the queue.")
-        current_playing_youtube_info = {} # Clear info if bot is not in voice channel
+        logging.warning("บอทไม่ได้อยู่ในช่องเสียงเพื่อเล่นเพลงในคิว.")
         return
 
     if voice_client.is_playing():
         voice_client.stop()
 
     if not queue:
-        logging.info("Music queue is empty.")
-        await channel.send("✅ Finished playing all songs in the queue!")
-        current_playing_youtube_info = {} # Clear info when queue is empty
+        logging.info("คิวเพลงว่างเปล่า.")
+        await channel.send("✅ เล่นเพลงในคิวทั้งหมดแล้ว!")
         return
 
-    url_to_play = queue.pop(0)
-    logging.info(f"Attempting to play from queue: {url_to_play}")
+    url_to_play = queue.pop(0) # ดึง URL ถัดไปจากคิว
+    logging.info(f"พยายามเล่นจากคิว: {url_to_play}")
     
+    # ตรวจสอบว่าเป็นลิงก์ YouTube/SoundCloud หรือไม่
+    # yt-dlp รองรับหลายแพลตฟอร์มรวมถึง YouTube และ SoundCloud
     ydl_opts = {
-        'format': 'bestaudio/best',
-        'default_search': 'ytsearch', # For cases where user just gives a song title
-        'source_address': '0.0.0.0',
-        'verbose': False,
-        'extract_flat': True # To quickly extract playlist info
+        'format': 'bestaudio/best', 
+        'default_search': 'ytsearch', 
+        'source_address': '0.0.0.0', 
+        'verbose': False, 
+        'noplaylist': True # ไม่ดึงเพลย์ลิสต์ทั้งหมดโดยอัตโนมัติหากไม่ได้ระบุอย่างชัดเจน
     }
 
     try:
-        loop = asyncio.get_event_loop() # Use the calling thread's event loop
+        loop = asyncio.get_event_loop()
         info = await loop.run_in_executor(None, lambda: yt_dlp.YoutubeDL(ydl_opts).extract_info(url_to_play, download=False))
         
         audio_url = None
         title = 'Unknown Title'
-        duration = 0
-        thumbnail = "https://placehold.co/400x400/FF0000/FFFFFF?text=YouTube"
 
         if info.get('_type') == 'playlist':
             playlist_title = info.get('title', 'Unknown Playlist')
-            await channel.send(f"🎶 Adding playlist: **{playlist_title}** to the queue...")
+            await channel.send(f"🎶 เพิ่มเพลย์ลิสต์: **{playlist_title}** ลงในคิว...")
             
-            # Add all videos in the playlist to the queue
-            # Since extract_flat=True, info.get('entries') will only have id and url of each video
+            # เพิ่มวิดีโอทั้งหมดในเพลย์ลิสต์ลงในคิว
             for entry in info.get('entries', []):
                 if entry and entry.get('url'):
                     queue.append(entry['url'])
             
-            # Play the very first video of the playlist (which was added as the first item in queue)
-            if queue:
-                # Pop the next video URL from the queue (which is now the first video of the playlist)
-                first_video_url = queue.pop(0)
-                # Fetch actual info for the first video again without extract_flat
-                single_video_ydl_opts = {
-                    'format': 'bestaudio/best',
-                    'source_address': '0.0.0.0',
-                    'verbose': False,
-                }
-                first_video_info = await loop.run_in_executor(None, lambda: yt_dlp.YoutubeDL(single_video_ydl_opts).extract_info(first_video_url, download=False))
-                audio_url = first_video_info['url']
-                title = first_video_info.get('title', 'Unknown Title')
-                duration = first_video_info.get('duration', 0)
-                thumbnail = first_video_info.get('thumbnail', thumbnail)
-                # Store original URL for looping
-                original_url = first_video_url
-            else:
-                raise Exception("Could not extract videos from playlist.")
+            # ดึงข้อมูลของวิดีโอแรกสุดจากเพลย์ลิสต์เพื่อเล่น
+            selected_info = info.get('entries')[0] if info.get('entries') else None
+            if not selected_info or not selected_info.get('url'):
+                raise Exception("ไม่สามารถดึงวิดีโอแรกจากเพลย์ลิสต์ได้.")
             
-        elif info.get('url'): # Single video
+            audio_url = selected_info['url']
+            title = selected_info.get('title', 'Unknown Title')
+        elif info.get('url'): 
             audio_url = info['url']
             title = info.get('title', 'Unknown Title')
-            duration = info.get('duration', 0)
-            thumbnail = info.get('thumbnail', thumbnail)
-            original_url = url_to_play
         else:
-            raise Exception("No playable audio URL found.")
+            raise Exception("ไม่พบ URL เสียงที่สามารถเล่นได้.")
         
-        current_playing_youtube_info = {
-            'title': title,
-            'duration': duration, # in seconds
-            'thumbnail': thumbnail,
-            'original_url': original_url # Store original URL for looping
-        }
-        
+        # เตรียมแหล่งเสียง FFmpeg
+        # ต้องแน่ใจว่า ffmpeg สามารถเข้าถึงได้ใน PATH หรือระบุ path เต็ม
         source = discord.FFmpegPCMAudio(audio_url, executable="ffmpeg")
-        
-        # Use bot.loop to run the callback in the bot's main thread
         voice_client.play(source, after=lambda e: asyncio.run_coroutine_threadsafe(
             _after_playback_cleanup(e, channel.id), bot.loop))
         
-        await channel.send(f"🎶 Now playing YouTube: **{title}**")
+        await channel.send(f"🎶 กำลังเล่น: **{title}**")
 
     except yt_dlp.utils.ExtractorError as e:
         error_message = str(e)
         if "Sign in to confirm you’re not a bot" in error_message or "requires login" in error_message or "age-restricted" in error_message or "unavailable in your country" in error_message:
             await channel.send(
-                f"❌ Cannot play **{url_to_play}**: This video may require login, be age-restricted, or unavailable in your region. Please try a different public video."
+                f"❌ ไม่สามารถเล่น **{url_to_play}** ได้: วิดีโอนี้อาจต้องเข้าสู่ระบบ, ถูกจำกัดอายุ, หรือไม่พร้อมใช้งานในภูมิภาคของคุณ โปรดลองใช้วิดีโอสาธารณะอื่น."
             )
-            logging.warning(f"Restricted YouTube video: {url_to_play}")
+            logging.warning(f"วิดีโอ YouTube/SoundCloud ถูกจำกัด: {url_to_play}")
         else:
-            await channel.send(f"❌ An unexpected error occurred playing YouTube for {url_to_play}: {e}")
-            logging.error(f"Error playing YouTube item {url_to_play}: {e}", exc_info=True)
-        
-        current_playing_youtube_info = {} # Clear info on error
-        # Attempt to play next song after an error
+            await channel.send(f"❌ เกิดข้อผิดพลาดที่ไม่คาดคิดในการเล่นสำหรับ {url_to_play}: {e}")
+            logging.error(f"ข้อผิดพลาดในการเล่นรายการ {url_to_play}: {e}", exc_info=True)
+        # พยายามเล่นเพลงถัดไปในคิวโดยอัตโนมัติหากปัจจุบันล้มเหลว
         if queue and voice_client and voice_client.is_connected():
+            await asyncio.sleep(1) # หน่วงเวลาเล็กน้อยก่อนลองเล่นเพลงถัดไป
             await _play_next_in_queue(channel)
         elif not queue:
-            await channel.send("✅ Finished playing all songs in the queue!")
-    except Exception as e:
-        logging.error(f"Error playing YouTube item {url_to_play}: {e}", exc_info=True)
-        await channel.send(f"❌ Could not play YouTube video: {url_to_play}. An error occurred: {e}")
-        
-        current_playing_youtube_info = {} # Clear info on error
-        # Attempt to play next song after an error
+            await channel.send("✅ เล่นเพลงในคิวทั้งหมดแล้ว!")
+    except Exception as e: 
+        logging.error(f"ข้อผิดพลาดในการเล่นรายการ {url_to_play}: {e}", exc_info=True)
+        await channel.send(f"❌ ไม่สามารถเล่น: {url_to_play} ได้ เกิดข้อผิดพลาด: {e}")
         if queue and voice_client and voice_client.is_connected():
+            await asyncio.sleep(1)
             await _play_next_in_queue(channel)
         elif not queue:
-            await channel.send("✅ Finished playing all songs in the queue!")
+            await channel.send("✅ เล่นเพลงในคิวทั้งหมดแล้ว!")
+
+async def cleanup_audio(error, filename):
+    """ล้างไฟล์เสียง TTS หลังจากเล่น"""
+    if error:
+        logging.error(f"ข้อผิดพลาดในการเล่น TTS: {error}")
+    if os.path.exists(filename):
+        os.remove(filename)
+        logging.info(f"ล้างไฟล์เสียง: {filename}")
 
 
 # --- Discord Bot Events ---
 @bot.event
 async def on_ready():
-    # Load Opus for voice functionality
+    """
+    เหตุการณ์นี้จะถูกเรียกเมื่อบอทเชื่อมต่อกับ Discord API สำเร็จ
+    """
+    # โหลด Opus สำหรับฟังก์ชันเสียง
     if not discord.opus.is_loaded():
         try:
-            discord.opus.load_opus('libopus.so')
-            logging.info("Opus loaded successfully.")
+            # พยายามโหลดไลบรารี Opus
+            # ตัวอย่าง: discord.opus.load_opus('libopus.so') # สำหรับ Linux
+            # discord.opus.load_opus('opus.dll') # สำหรับ Windows
+            # discord.opus.load_opus('libopus.dylib') # สำหรับ macOS
+            # หากไม่ระบุ path และไฟล์อยู่ใน PATH ของระบบ จะหาเจอเอง
+            discord.opus.load_opus() 
+            logging.info("Opus โหลดสำเร็จ.")
         except Exception as e:
-            logging.error(f"Could not load opus: {e}. Voice commands may not work.")
-            print(f"Could not load opus: {e}. Please ensure it is installed and accessible.")
+            logging.error(f"ไม่สามารถโหลด opus: {e} ได้ คำสั่งเสียงอาจไม่ทำงาน.")
+            print(f"ไม่สามารถโหลด opus: {e} ได้ โปรดตรวจสอบให้แน่ใจว่าติดตั้งและเข้าถึงได้.")
 
-    print(f"✅ Bot logged in as {bot.user}")
-    logging.info(f"Bot logged in as {bot.user}")
+    print(f"✅ บอทเข้าสู่ระบบในฐานะ {bot.user}")
+    logging.info(f"บอทเข้าสู่ระบบในฐานะ {bot.user}")
 
+    # ซิงค์คำสั่งทั่วโลกและไปยัง Guild เฉพาะสำหรับการอัปเดตที่รวดเร็วระหว่างการพัฒนา
     try:
-        # Sync Global commands
+        # ซิงค์คำสั่งทั่วโลก (อาจใช้เวลานานในการอัปเดตสำหรับผู้ใช้)
         await tree.sync() 
-        logging.info("Global commands synced.")
+        logging.info("คำสั่งทั่วโลกซิงค์แล้ว.")
         
-        # Sync commands to a specific Guild (if GUILD_ID is defined)
-        if YOUR_GUILD_ID:
-            guild_obj = discord.Object(id=YOUR_GUILD_ID)
-            await tree.sync(guild=guild_obj)
-            logging.info(f"Commands synced to guild: {YOUR_GUILD_ID}")
-        else:
-            logging.warning("GUILD_ID not defined. Not syncing commands to specific Guild.")
+        # ซิงค์คำสั่งไปยัง Guild เฉพาะ (อัปเดตทันทีสำหรับ Guild ที่ระบุ)
+        guild_obj = discord.Object(id=YOUR_GUILD_ID)
+        await tree.sync(guild=guild_obj)
+        logging.info(f"คำสั่งซิงค์กับ Guild: {YOUR_GUILD_ID}")
     except Exception as e:
-        logging.error(f"Could not sync commands: {e}", exc_info=True)
+        logging.error(f"ไม่สามารถซิงค์คำสั่ง: {e} ได้", exc_info=True)
 
-    # Load Spotify tokens and Flask sessions from Firestore
-    # As on_ready is already an async context, we can call await directly
+    # โหลดข้อมูลผู้ใช้ทั้งหมดจาก Firestore เมื่อบอทเริ่มต้น
     await load_all_user_data_from_firestore()
     
-    bot_ready.set() # Set Event to let Flask know the bot is ready
-    logging.info("Bot is fully ready.")
+    bot_ready.set() # ตั้งค่า Event เพื่อส่งสัญญาณว่าบอทพร้อมใช้งาน
+    logging.info("บอทพร้อมใช้งานเต็มที่แล้ว.")
 
-# --- Discord Slash Commands (as per PRD) ---
+# --- Discord Slash Commands ---
 
-@tree.command(name="join", description="Joins your voice channel")
+@tree.command(name="join", description="เข้าร่วมช่องเสียงของคุณ")
 async def join(interaction: discord.Interaction):
+    """คำสั่งสำหรับบอทเข้าร่วมช่องเสียงที่ผู้ใช้กำลังอยู่"""
     global voice_client
     if interaction.user.voice:
         channel = interaction.user.voice.channel
         if voice_client and voice_client.is_connected():
             if voice_client.channel.id == channel.id:
-                await interaction.response.send_message(f"✅ Already in **{channel.name}**", ephemeral=True)
+                await interaction.response.send_message(f"✅ อยู่ใน **{channel.name}** แล้ว", ephemeral=True)
             else:
                 await voice_client.move_to(channel)
-                await interaction.response.send_message(f"✅ Moved to **{channel.name}**", ephemeral=True)
+                await interaction.response.send_message(f"✅ ย้ายไปยัง **{channel.name}** แล้ว", ephemeral=True)
         else:
             try:
                 voice_client = await channel.connect()
-                await interaction.response.send_message(f"✅ Joined **{channel.name}**", ephemeral=True)
+                await interaction.response.send_message(f"✅ เข้าร่วม **{channel.name}** แล้ว", ephemeral=True)
             except discord.ClientException as e:
-                logging.error(f"Could not connect to voice channel: {e}")
-                await interaction.response.send_message(f"❌ Could not connect to voice channel: {e}", ephemeral=True)
+                logging.error(f"ไม่สามารถเชื่อมต่อช่องเสียง: {e} ได้")
+                await interaction.response.send_message(f"❌ ไม่สามารถเชื่อมต่อช่องเสียง: {e} ได้", ephemeral=True)
             except Exception as e:
-                logging.error(f"An unexpected error occurred while joining voice channel: {e}")
-                await interaction.response.send_message(f"❌ An unexpected error occurred: {e}", ephemeral=True)
+                logging.error(f"เกิดข้อผิดพลาดที่ไม่คาดคิดขณะเข้าร่วมช่องเสียง: {e}")
+                await interaction.response.send_message(f"❌ เกิดข้อผิดพลาดที่ไม่คาดคิด: {e}", ephemeral=True)
     else:
-        await interaction.response.send_message("❌ You are not in a voice channel", ephemeral=True)
+        await interaction.response.send_message("❌ คุณไม่ได้อยู่ในช่องเสียง", ephemeral=True)
 
-@tree.command(name="leave", description="Leaves the voice channel")
+@tree.command(name="leave", description="ออกจากช่องเสียง")
 async def leave(interaction: discord.Interaction):
-    global voice_client, queue
+    """คำสั่งสำหรับบอทออกจากช่องเสียง"""
+    global voice_client
     if voice_client and voice_client.is_connected():
         if voice_client.is_playing():
             voice_client.stop()
-        queue.clear() # Clear queue when leaving voice channel
         await voice_client.disconnect()
         voice_client = None
-        await interaction.response.send_message("✅ Left voice channel and cleared music queue", ephemeral=True)
+        await interaction.response.send_message("✅ ออกจากช่องเสียงแล้ว", ephemeral=True)
     else:
-        await interaction.response.send_message("❌ Not in a voice channel", ephemeral=True)
+        await interaction.response.send_message("❌ ไม่ได้อยู่ในช่องเสียง", ephemeral=True)
 
-@tree.command(name="link_spotify", description="Links your Spotify account")
+@tree.command(name="link_spotify", description="เชื่อมโยงบัญชี Spotify ของคุณ")
 async def link_spotify(interaction: discord.Interaction):
-    # Pass base_url to user so the link works in any environment
-    # Ensure this URL is always HTTPS for the Discord message
-    base_url = url_for('index', _external=True, _scheme='https')
+    """คำสั่งสำหรับส่งลิงก์หน้าเว็บให้ผู้ใช้เชื่อมโยง Spotify"""
     await interaction.response.send_message(
-        f"🔗 To link your Spotify account, please visit:\n"
-        f"**{base_url}**\n"
-        f"Log in with Discord first, then connect Spotify.", 
+        f"🔗 ในการเชื่อมโยงบัญชี Spotify ของคุณ โปรดไปที่:\n"
+        f"**{url_for('index', _external=True)}**\n"
+        f"เข้าสู่ระบบด้วย Discord ก่อน จากนั้นจึงเชื่อมต่อ Spotify", 
         ephemeral=True
     )
 
-@tree.command(name="play", description="Plays music from Spotify")
-@app_commands.describe(query="Song name, artist, or Spotify link")
+@tree.command(name="play", description="เล่นเพลงจาก Spotify")
+@app_commands.describe(query="ชื่อเพลง, ศิลปิน, หรือลิงก์ Spotify (เพลง, เพลย์ลิสต์, อัลบั้ม)")
 async def play(interaction: discord.Interaction, query: str):
+    """
+    คำสั่งสำหรับเล่นเพลง, เพลย์ลิสต์ หรืออัลบั้มจาก Spotify
+    รองรับการค้นหาด้วยชื่อหรือลิงก์ Spotify โดยตรง
+    """
     sp_user = get_user_spotify_client(interaction.user.id)
     if not sp_user:
         await interaction.response.send_message(
-            "❌ Please link your Spotify account first using /link_spotify", 
+            "❌ กรุณาเชื่อมโยงบัญชี Spotify ของคุณก่อนโดยใช้ /link_spotify", 
             ephemeral=True
         )
         return
 
-    await interaction.response.defer()
+    await interaction.response.defer() # หน่วงการตอบสนองเนื่องจากการเรียก Spotify API อาจใช้เวลา
 
     try:
         track_uris = []
         context_uri = None
         response_msg = "🎶"
 
+        # ตรวจสอบว่าเป็นลิงก์ Spotify (เพลง, เพลย์ลิสต์, หรืออัลบั้ม) หรือไม่
         if "spotify.com/track/" in query:
             track_id = query.split('/')[-1].split('?')[0]
             track_uri = f"spotify:track:{track_id}"
             track = await asyncio.to_thread(sp_user.track, track_uri)
             track_uris.append(track_uri)
-            response_msg += f" Playing: **{track['name']}** by **{track['artists'][0]['name']}**"
+            response_msg += f" กำลังเล่น: **{track['name']}** โดย **{track['artists'][0]['name']}**"
         elif "spotify.com/playlist/" in query:
             playlist_id = query.split('/')[-1].split('?')[0]
             context_uri = f"spotify:playlist:{playlist_id}"
             playlist = await asyncio.to_thread(sp_user.playlist, playlist_id)
-            response_msg += f" Playing playlist: **{playlist['name']}**"
+            response_msg += f" กำลังเล่นเพลย์ลิสต์: **{playlist['name']}**"
         elif "spotify.com/album/" in query:
             album_id = query.split('/')[-1].split('?')[0]
             context_uri = f"spotify:album:{album_id}"
             album = await asyncio.to_thread(sp_user.album, album_id)
-            response_msg += f" Playing album: **{album['name']}**"
-        else:
+            response_msg += f" กำลังเล่นอัลบั้ม: **{album['name']}**"
+        else:  # ค้นหาด้วยชื่อถ้าไม่ใช่ลิงก์โดยตรง
             results = await asyncio.to_thread(sp_user.search, q=query, type='track', limit=1)
             if not results['tracks']['items']:
-                await interaction.followup.send("❌ No song found on Spotify")
+                await interaction.followup.send("❌ ไม่พบเพลงบน Spotify")
                 return
             track = results['tracks']['items'][0]
             track_uris.append(track['uri'])
-            response_msg += f" Playing: **{track['name']}** by **{track['artists'][0]['name']}**"
+            response_msg += f" กำลังเล่น: **{track['name']}** โดย **{track['artists'][0]['name']}**"
 
+        # ดึงอุปกรณ์ที่ใช้งานอยู่เพื่อเล่นเพลง
         devices = await asyncio.to_thread(sp_user.devices)
         active_device_id = None
         for device in devices['devices']:
@@ -547,210 +554,149 @@ async def play(interaction: discord.Interaction, query: str):
                 break
         
         if not active_device_id:
-            await interaction.followup.send("❌ No active Spotify client found. Please open your Spotify app and play something there first, or select a playback device in Spotify.")
+            await interaction.followup.send("❌ ไม่พบ Spotify client ที่ใช้งานอยู่ กรุณาเปิดแอป Spotify ของคุณและเล่นเพลงอะไรก็ได้ที่นั่นก่อน หรือเลือกอุปกรณ์สำหรับเล่นใน Spotify.")
             return
 
-        if context_uri:
+        # เริ่มเล่นเพลงบนอุปกรณ์ที่ใช้งานอยู่
+        if context_uri: # สำหรับเพลย์ลิสต์และอัลบั้ม
             await asyncio.to_thread(sp_user.start_playback, device_id=active_device_id, context_uri=context_uri)
-        else:
+        else: # สำหรับเพลงเดี่ยว
             await asyncio.to_thread(sp_user.start_playback, device_id=active_device_id, uris=track_uris)
         
         await interaction.followup.send(response_msg)
 
     except spotipy.exceptions.SpotifyException as e:
         if e.http_status == 401:
-            await interaction.followup.send("❌ Spotify token expired. Please link your account again using /link_spotify.")
+            await interaction.followup.send("❌ โทเค็น Spotify หมดอายุ กรุณาเชื่อมโยงบัญชีของคุณใหม่โดยใช้ /link_spotify.")
             if interaction.user.id in spotify_users:
                 del spotify_users[interaction.user.id]
-                await update_user_data_in_firestore(interaction.user.id, spotify_token_info=firestore.DELETE_FIELD)
+                await update_user_data_in_firestore(interaction.user.id, spotify_token_info=firestore.DELETE_FIELD) 
         elif e.http_status == 404 and "Device not found" in str(e):
-            await interaction.followup.send("❌ No active Spotify client found. Please open your Spotify app.")
-        elif e.http_status == 403:
-            await interaction.followup.send("❌ Spotify playback error: You might need a Spotify Premium account or have playback restrictions.")
+            await interaction.followup.send("❌ ไม่พบ Spotify client ที่ใช้งานอยู่ กรุณาเปิดแอป Spotify ของคุณ.")
+        elif e.http_status == 403: # ข้อผิดพลาด Forbidden มักเกี่ยวข้องกับ Premium หรือข้อจำกัดการเล่น
+            await interaction.followup.send("❌ ข้อผิดพลาดในการเล่น Spotify: คุณอาจต้องมีบัญชี Spotify Premium หรือมีข้อจำกัดในการเล่น.")
         else:
-            await interaction.followup.send(f"❌ Spotify error: {e}. Please try again.")
-        logging.error(f"Spotify error for user {interaction.user.id}: {e}", exc_info=True)
+            await interaction.followup.send(f"❌ ข้อผิดพลาด Spotify: {e}. โปรดลองอีกครั้ง.")
+        logging.error(f"ข้อผิดพลาด Spotify สำหรับผู้ใช้ {interaction.user.id}: {e}", exc_info=True)
     except Exception as e:
-        await interaction.followup.send(f"❌ An unexpected error occurred: {e}")
-        logging.error(f"Unexpected error in play command: {e}", exc_info=True)
+        await interaction.followup.send(f"❌ เกิดข้อผิดพลาดที่ไม่คาดคิด: {e}")
+        logging.error(f"ข้อผิดพลาดที่ไม่คาดคิดในคำสั่ง play: {e}", exc_info=True)
 
-@tree.command(name="pause", description="Pauses Spotify playback")
-async def pause_spotify(interaction: discord.Interaction):
-    sp_user = get_user_spotify_client(interaction.user.id)
-    if not sp_user:
-        await interaction.response.send_message("❌ Please link your Spotify account first using /link_spotify", ephemeral=True)
-        return
-    
-    try:
-        await asyncio.to_thread(sp_user.pause_playback)
-        await interaction.response.send_message("⏸️ Spotify playback paused", ephemeral=True)
-    except spotipy.exceptions.SpotifyException as e:
-        await interaction.response.send_message(f"❌ Error pausing Spotify playback: {e}", ephemeral=True)
-        logging.error(f"Error pausing Spotify playback for user {interaction.user.id}: {e}", exc_info=True)
-    except Exception as e:
-        await interaction.response.send_message(f"❌ An unexpected error occurred: {e}", ephemeral=True)
-        logging.error(f"Unexpected error in pause command: {e}", exc_info=True)
-
-@tree.command(name="resume", description="Resumes Spotify playback")
-async def resume_spotify(interaction: discord.Interaction):
-    sp_user = get_user_spotify_client(interaction.user.id)
-    if not sp_user:
-        await interaction.response.send_message("❌ Please link your Spotify account first using /link_spotify", ephemeral=True)
-        return
-    
-    try:
-        await asyncio.to_thread(sp_user.start_playback)
-        await interaction.response.send_message("▶️ Spotify playback resumed", ephemeral=True)
-    except spotipy.exceptions.SpotifyException as e:
-        await interaction.response.send_message(f"❌ Error resuming Spotify playback: {e}", ephemeral=True)
-        logging.error(f"Error resuming Spotify playback for user {interaction.user.id}: {e}", exc_info=True)
-    except Exception as e:
-        await interaction.response.send_message(f"❌ An unexpected error occurred: {e}", ephemeral=True)
-        logging.error(f"Unexpected error in resume command: {e}", exc_info=True)
-
-@tree.command(name="skip", description="Skips the current song")
-async def skip_spotify(interaction: discord.Interaction):
-    sp_user = get_user_spotify_client(interaction.user.id)
-    if not sp_user:
-        await interaction.response.send_message("❌ Please link your Spotify account first using /link_spotify", ephemeral=True)
-        return
-    
-    try:
-        await asyncio.to_thread(sp_user.next_track)
-        await interaction.response.send_message("⏭️ Song skipped", ephemeral=True)
-    except spotipy.exceptions.SpotifyException as e:
-        await interaction.response.send_message(f"❌ Error skipping Spotify song: {e}", ephemeral=True)
-        logging.error(f"Error skipping Spotify song for user {interaction.user.id}: {e}", exc_info=True)
-    except Exception as e:
-        await interaction.response.send_message(f"❌ An unexpected error occurred: {e}", ephemeral=True)
-        logging.error(f"Unexpected error in skip command: {e}", exc_info=True)
-
-@tree.command(name="speak", description="Makes the bot speak in the voice channel")
-@app_commands.describe(message="The message for the bot to speak")
-@app_commands.describe(lang="Language (e.g., 'en', 'th')")
-async def speak(interaction: discord.Interaction, message: str, lang: str = 'en'):
-    global voice_client
-    if not voice_client or not voice_client.is_connected():
-        await interaction.response.send_message("❌ Bot is not in a voice channel. Use /join first", ephemeral=True)
-        return
-    
-    await interaction.response.defer()
-    try:
-        tts_filename = f"tts_discord_{interaction.id}.mp3"
-        await asyncio.to_thread(gTTS(message, lang=lang).save, tts_filename)
-        
-        source = discord.FFmpegPCMAudio(tts_filename, executable="ffmpeg")
-        
-        # Use bot.loop to run the callback in the bot's main thread
-        voice_client.play(source, after=lambda e: asyncio.run_coroutine_threadsafe(
-            cleanup_audio(e, tts_filename), bot.loop))
-        
-        await interaction.followup.send(f"🗣️ Speaking: **{message}** (Language: {lang})")
-
-    except Exception as e:
-        await interaction.followup.send(f"❌ Error speaking: {e}")
-        logging.error(f"TTS error: {e}", exc_info=True)
-
-async def cleanup_audio(error, filename):
-    """Cleans up the TTS audio file after playback"""
-    if error:
-        logging.error(f"Error playing TTS: {error}")
-    if os.path.exists(filename):
-        os.remove(filename)
-        logging.info(f"Cleaned up audio file: {filename}")
-
-@tree.command(name="random_name", description="Randomly picks a name from a given list")
-@app_commands.describe(names="Names or items separated by commas (e.g., John, Doe, Alice)")
+@tree.command(name="random_name", description="สุ่มเลือกชื่อจากรายการที่ให้มา")
+@app_commands.describe(names="ชื่อหรือรายการที่คั่นด้วยเครื่องหมายจุลภาค (เช่น John, Doe, Alice)")
 async def random_name(interaction: discord.Interaction, names: str):
+    """คำสั่งสำหรับสุ่มเลือกชื่อจากรายการที่ผู้ใช้ป้อน"""
     try:
         name_list = [name.strip() for name in names.split(',') if name.strip()]
         
         if not name_list:
-            await interaction.response.send_message("❌ Please provide at least one name separated by commas", ephemeral=True)
+            await interaction.response.send_message("❌ โปรดระบุชื่ออย่างน้อยหนึ่งชื่อที่คั่นด้วยจุลภาค", ephemeral=True)
             return
 
         selected_name = random.choice(name_list)
-        await interaction.response.send_message(f"✨ The randomly selected name is: **{selected_name}**")
-        logging.info(f"{interaction.user.display_name} randomized names: '{names}' and got '{selected_name}'")
+        await interaction.response.send_message(f"✨ ชื่อที่ถูกสุ่มเลือกคือ: **{selected_name}**")
+        logging.info(f"{interaction.user.display_name} สุ่มชื่อ: '{names}' และได้ '{selected_name}'")
 
     except Exception as e:
-        logging.error(f"Error in random_name command: {e}", exc_info=True)
-        await interaction.response.send_message(f"❌ An error occurred while picking a random name: {e}", ephemeral=True)
+        logging.error(f"ข้อผิดพลาดในคำสั่ง random_name: {e}", exc_info=True)
+        await interaction.response.send_message(f"❌ เกิดข้อผิดพลาดในการสุ่มชื่อ: {e}", ephemeral=True)
 
+# --- คลาสระบบโพลล์ (Poll System Class) ---
 class PollView(discord.ui.View):
+    """
+    View สำหรับจัดการการโต้ตอบปุ่มของระบบโพลล์
+    """
     def __init__(self, poll_id, question, options):
-        super().__init__(timeout=None)
+        super().__init__(timeout=None) # คงโพลล์ให้ทำงานไปเรื่อยๆ จนกว่าจะถูกลบหรือหมดอายุโดย Discord
         self.poll_id = poll_id
         self.question = question
         self.options = options
         
+        # เริ่มต้นโครงสร้างข้อมูลโหวตสำหรับโพลล์นี้ หากยังไม่มี
         if poll_id not in active_polls:
             active_polls[poll_id] = {
                 "question": question,
                 "options": options,
-                "votes": {option: set() for option in options}
+                "votes": {option: set() for option in options} # ใช้ set เพื่อเก็บ user ID ป้องกันการโหวตซ้ำ
             }
         
+        # เพิ่มปุ่มสำหรับแต่ละตัวเลือกแบบไดนามิก
         for i, option in enumerate(options):
             button = discord.ui.Button(label=option, custom_id=f"poll_{poll_id}_{i}", style=discord.ButtonStyle.primary)
-            button.callback = self._button_callback
+            button.callback = self._button_callback # กำหนด callback เฉพาะสำหรับปุ่มนี้
             self.add_item(button)
 
-        show_results_button_item = discord.ui.Button(label="Show Results", style=discord.ButtonStyle.secondary, custom_id=f"poll_show_results_{poll_id}")
-        show_results_button_item.callback = self.show_results_button
+        # เพิ่มปุ่ม "แสดงผลลัพธ์"
+        show_results_button_item = discord.ui.Button(label="แสดงผลลัพธ์", style=discord.ButtonStyle.secondary, custom_id=f"poll_show_results_{poll_id}")
+        show_results_button_item.callback = self.show_results_button 
         self.add_item(show_results_button_item)
 
     async def on_timeout(self):
-        logging.info(f"Poll {self.poll_id} timed out.")
+        """เหตุการณ์นี้จะถูกเรียกเมื่อ View หมดเวลา (ถ้ามีการตั้ง timeout)"""
+        logging.info(f"Poll {self.poll_id} หมดเวลา.")
+        # สำหรับโพลล์ที่ไม่สิ้นสุด อาจไม่ถึงตรงนี้เว้นแต่จะหยุดอย่างชัดเจน
+        # คุณอาจต้องการปิดใช้งานปุ่มหรือลบข้อมูลโพลล์ที่นี่
+        # self.clear_items()
+        # await self.message.edit(view=self) 
+        # if self.poll_id in active_polls:
+        #     del active_polls[self.poll_id]
 
-    @discord.ui.button(label="Show Results", style=discord.ButtonStyle.secondary, custom_id="show_results_placeholder")
+    # Callback สำหรับปุ่ม "แสดงผลลัพธ์"
+    @discord.ui.button(label="แสดงผลลัพธ์", style=discord.ButtonStyle.secondary, custom_id="show_results_placeholder") # custom_id ที่นี่เป็นเพียง placeholder
     async def show_results_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        """จัดการการคลิกปุ่ม 'แสดงผลลัพธ์'"""
         expected_custom_id = f"poll_show_results_{self.poll_id}"
         if button.custom_id != expected_custom_id:
-            await interaction.response.send_message("❌ This 'Show Results' button is not linked to an active poll.", ephemeral=True)
+            await interaction.response.send_message("❌ ปุ่ม 'แสดงผลลัพธ์' นี้ไม่ได้เชื่อมโยงกับโพลล์ที่ใช้งานอยู่.", ephemeral=True)
             return
 
+        # อัปเดตข้อความโพลล์เพื่อแสดงผลลัพธ์ล่าสุด
         await self.update_poll_message(interaction.message)
-        await interaction.response.defer()
+        await interaction.response.defer() # ยืนยันการกดปุ่มโดยไม่ต้องส่งข้อความใหม่
+
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        """ตรวจสอบสิทธิ์ในการโต้ตอบกับปุ่ม (ทุกคนสามารถโต้ตอบได้)"""
         return True 
 
     async def on_error(self, interaction: discord.Interaction, error: Exception, item: discord.ui.Item):
-        logging.error(f"Error in poll interaction: {error}", exc_info=True)
+        """จัดการข้อผิดพลาดที่เกิดขึ้นระหว่างการโต้ตอบปุ่ม"""
+        logging.error(f"ข้อผิดพลาดในการโต้ตอบโพลล์: {error}", exc_info=True)
         try:
-            await interaction.followup.send(f"❌ An error occurred while processing your vote: {error}", ephemeral=True)
+            await interaction.followup.send(f"❌ เกิดข้อผิดพลาดขณะประมวลผลการโหวตของคุณ: {error}", ephemeral=True)
         except discord.errors.NotFound:
-            logging.warning(f"Could not send error message to webhook (Unknown Webhook) for interaction {interaction.id}. Original error: {error}")
+            logging.warning(f"ไม่สามารถส่งข้อความแสดงข้อผิดพลาดไปยัง webhook (Unknown Webhook) สำหรับการโต้ตอบ {interaction.id}. ข้อผิดพลาดดั้งเดิม: {error}")
         except Exception as e:
-            logging.error(f"Could not send error message in on_error. Secondary error: {e}", exc_info=True)
+            logging.error(f"ไม่สามารถส่งข้อความแสดงข้อผิดพลาดใน on_error. ข้อผิดพลาดรอง: {e}", exc_info=True)
+
 
     async def update_poll_message(self, message: discord.Message):
-        """Updates the poll message with current vote counts"""
+        """อัปเดตข้อความโพลล์พร้อมจำนวนคะแนนโหวตปัจจุบัน"""
         poll_data = active_polls.get(message.id)
         if not poll_data:
-            logging.warning(f"Attempted to update a non-existent poll: {message.id}")
+            logging.warning(f"พยายามอัปเดตโพลล์ที่ไม่มีอยู่: {message.id}")
             return
 
         embed = discord.Embed(
-            title=f"📊 Poll: {poll_data['question']}",
+            title=f"📊 โพลล์: {poll_data['question']}",
             color=discord.Color.purple()
         )
 
         results_text = ""
         for option, voters in poll_data['votes'].items():
-            results_text += f"**{option}**: {len(voters)} votes\n"
+            results_text += f"**{option}**: {len(voters)} โหวต\n"
         
-        embed.description = results_text if results_text else "No votes yet."
+        embed.description = results_text if results_text else "ยังไม่มีคะแนนโหวต."
         embed.set_footer(text=f"Poll ID: {message.id}")
         
         await message.edit(embed=embed, view=self)
 
-    async def _button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
-        custom_id = interaction.data['custom_id']
+    async def _button_callback(self, interaction: discord.Interaction): 
+        """Callback สำหรับปุ่มตัวเลือกโพลล์"""
+        custom_id = interaction.data['custom_id'] 
         parts = custom_id.split('_')
         if len(parts) != 3 or parts[0] != "poll":
-            await interaction.response.send_message("❌ Error with this poll button", ephemeral=True)
+            await interaction.response.send_message("❌ เกิดข้อผิดพลาดกับปุ่มโพลล์นี้", ephemeral=True)
             return
 
         poll_id = int(parts[1])
@@ -759,174 +705,250 @@ class PollView(discord.ui.View):
         
         poll_data = active_polls.get(poll_id)
         if not poll_data:
-            await interaction.response.send_message("❌ This poll is no longer active.", ephemeral=True)
+            await interaction.response.send_message("❌ โพลล์นี้ไม่ทำงานแล้ว.", ephemeral=True)
             return
         
         selected_option = poll_data['options'][option_index]
 
+        # ลบการโหวตก่อนหน้าของผู้ใช้จากตัวเลือกใดๆ (หากผู้ใช้สามารถโหวตได้เพียงตัวเลือกเดียว)
         user_changed_vote = False
         for option_key, voters_set in poll_data['votes'].items():
             if user_id in voters_set and option_key != selected_option:
                 voters_set.remove(user_id)
                 user_changed_vote = True
-                logging.info(f"User {user_id} removed vote from {option_key} in poll {poll_id}")
+                logging.info(f"ผู้ใช้ {user_id} ลบการโหวตจาก {option_key} ในโพลล์ {poll_id}")
                 break
         
+        # เพิ่มการโหวตใหม่
         if user_id not in poll_data['votes'][selected_option]:
             poll_data['votes'][selected_option].add(user_id)
-            logging.info(f"User {user_id} voted for {selected_option} in poll {poll_id}")
-            status_message = f"✅ You have voted for: **{selected_option}**"
+            logging.info(f"ผู้ใช้ {user_id} โหวตให้ {selected_option} ในโพลล์ {poll_id}")
+            status_message = f"✅ คุณได้โหวตให้: **{selected_option}**"
         else:
-            status_message = f"✅ You are still voting for: **{selected_option}**"
-            logging.info(f"User {user_id} confirmed vote for {selected_option} in poll {poll_id}")
+            status_message = f"✅ คุณยังคงโหวตให้: **{selected_option}**"
+            logging.info(f"ผู้ใช้ {user_id} ยืนยันการโหวตสำหรับ {selected_option} ในโพลล์ {poll_id}")
 
         await self.update_poll_message(interaction.message)
         await interaction.response.send_message(status_message, ephemeral=True)
 
 
-@tree.command(name="poll", description="Creates a poll with options")
-@app_commands.describe(question="The question for the poll")
-@app_commands.describe(options="Options for the poll (comma-separated, e.g., Option A, Option B)")
+@tree.command(name="poll", description="สร้างโพลล์ด้วยตัวเลือก")
+@app_commands.describe(question="คำถามสำหรับโพลล์")
+@app_commands.describe(options="ตัวเลือกสำหรับโพลล์ (คั่นด้วยจุลภาค เช่น ตัวเลือก A, ตัวเลือก B)")
 async def create_poll(interaction: discord.Interaction, question: str, options: str):
+    """คำสั่งสำหรับสร้างโพลล์ใหม่พร้อมปุ่มโหวต"""
     option_list = [opt.strip() for opt in options.split(',') if opt.strip()]
 
     if not option_list:
-        await interaction.response.send_message("❌ Please provide at least one option for the poll", ephemeral=True)
+        await interaction.response.send_message("❌ โปรดระบุตัวเลือกอย่างน้อยหนึ่งตัวเลือกสำหรับโพลล์", ephemeral=True)
         return
     
-    if len(option_list) > 25:
-        await interaction.response.send_message("❌ Only up to 25 options are supported for a poll", ephemeral=True)
+    if len(option_list) > 25: # Discord จำกัดปุ่มไว้ที่ 5 แถว แถวละ 5 ปุ่ม (รวม 25 ปุ่ม)
+        await interaction.response.send_message("❌ รองรับสูงสุด 25 ตัวเลือกสำหรับโพลล์เท่านั้น", ephemeral=True)
         return
 
     embed = discord.Embed(
-        title=f"📊 Poll: {question}",
-        description="Click the buttons below to vote!",
+        title=f"📊 โพลล์: {question}",
+        description="คลิกปุ่มด้านล่างเพื่อโหวต!",
         color=discord.Color.blue()
     )
-    embed.set_footer(text=f"Poll created by: {interaction.user.display_name}")
+    embed.set_footer(text=f"โพลล์สร้างโดย: {interaction.user.display_name}")
 
     initial_results_text = ""
     for option in option_list:
-        initial_results_text += f"**{option}**: 0 votes\n"
-    embed.add_field(name="Initial Results", value=initial_results_text, inline=False)
-
+        initial_results_text += f"**{option}**: 0 โหวต\n"
+    embed.add_field(name="ผลโหวตเบื้องต้น", value=initial_results_text, inline=False)
 
     await interaction.response.defer(ephemeral=False)
 
+    # ส่งข้อความโดยไม่มี View ก่อนเพื่อดึง Message ID
     message = await interaction.followup.send(embed=embed)
     
+    # เก็บข้อมูลโพลล์ทันทีที่ Message ID พร้อมใช้งาน
     active_polls[message.id] = {
         "question": question,
         "options": option_list,
         "votes": {option: set() for option in option_list}
     }
 
+    # สร้าง Instance ของ PollView และแนบไปกับข้อความ
     poll_view = PollView(message.id, question, option_list)
+    await message.edit(view=poll_view) 
+    logging.info(f"โพลล์สร้างโดย {interaction.user.display_name}: ID {message.id}, คำถาม: {question}, ตัวเลือก: {options}")
+
+
+@tree.command(name="pause", description="หยุดเล่น Spotify ชั่วคราว")
+async def pause_spotify(interaction: discord.Interaction):
+    """คำสั่งสำหรับหยุดเล่นเพลง Spotify ชั่วคราว"""
+    sp_user = get_user_spotify_client(interaction.user.id)
+    if not sp_user:
+        await interaction.response.send_message("❌ กรุณาเชื่อมโยงบัญชี Spotify ของคุณก่อนโดยใช้ /link_spotify", ephemeral=True)
+        return
     
-    await message.edit(embed=embed, view=poll_view) # Corrected to use the updated embed
-    logging.info(f"Poll created by {interaction.user.display_name}: ID {message.id}, Question: {question}, Options: {options}")
-
-
-@tree.command(name="wake", description="Wakes up a user with a DM")
-@app_commands.describe(user="Select a user")
-async def wake(interaction: discord.Interaction, user: discord.User):
     try:
-        await user.send(f"⏰ You've been poked by {interaction.user.display_name}! Wakey wakey!")
-        await interaction.response.send_message(f"✅ Poked {user.name}", ephemeral=True)
-        logging.info(f"{interaction.user.display_name} poked {user.name}.")
-    except discord.Forbidden:
-        await interaction.response.send_message(f"❌ Could not send DM to {user.name} (they might have DMs closed or are a bot)", ephemeral=True)
-        logging.warning(f"Could not send DM to {user.name} (Forbidden).")
+        await asyncio.to_thread(sp_user.pause_playback)
+        await interaction.response.send_message("⏸️ หยุดเล่น Spotify ชั่วคราว", ephemeral=True)
+    except spotipy.exceptions.SpotifyException as e:
+        await interaction.response.send_message(f"❌ ข้อผิดพลาดในการหยุดเล่น Spotify: {e}", ephemeral=True)
+        logging.error(f"ข้อผิดพลาดในการหยุดเล่น Spotify สำหรับผู้ใช้ {interaction.user.id}: {e}", exc_info=True)
     except Exception as e:
-        await interaction.response.send_message(f"❌ An error occurred sending DM: {e}", ephemeral=True)
-        logging.error(f"Could not poke user: {e}", exc_info=True)
+        await interaction.response.send_message(f"❌ เกิดข้อผิดพลาดที่ไม่คาดคิด: {e}", ephemeral=True)
+        logging.error(f"ข้อผิดพลาดที่ไม่คาดคิดในคำสั่ง pause: {e}", exc_info=True)
+
+@tree.command(name="resume", description="เล่น Spotify ต่อ")
+async def resume_spotify(interaction: discord.Interaction):
+    """คำสั่งสำหรับเล่นเพลง Spotify ต่อจากที่หยุดไว้"""
+    sp_user = get_user_spotify_client(interaction.user.id)
+    if not sp_user:
+        await interaction.response.send_message("❌ กรุณาเชื่อมโยงบัญชี Spotify ของคุณก่อนโดยใช้ /link_spotify", ephemeral=True)
+        return
+    
+    try:
+        await asyncio.to_thread(sp_user.start_playback)
+        await interaction.response.send_message("▶️ เล่น Spotify ต่อ", ephemeral=True)
+    except spotipy.exceptions.SpotifyException as e:
+        await interaction.response.send_message(f"❌ ข้อผิดพลาดในการเล่น Spotify ต่อ: {e}", ephemeral=True)
+        logging.error(f"ข้อผิดพลาดในการเล่น Spotify ต่อสำหรับผู้ใช้ {interaction.user.id}: {e}", exc_info=True)
+    except Exception as e:
+        await interaction.response.send_message(f"❌ เกิดข้อผิดพลาดที่ไม่คาดคิด: {e}", ephemeral=True)
+        logging.error(f"ข้อผิดพลาดที่ไม่คาดคิดในคำสั่ง resume: {e}", exc_info=True)
+
+@tree.command(name="skip", description="ข้ามเพลงปัจจุบัน")
+async def skip_spotify(interaction: discord.Interaction):
+    """คำสั่งสำหรับข้ามเพลง Spotify ปัจจุบัน"""
+    sp_user = get_user_spotify_client(interaction.user.id)
+    if not sp_user:
+        await interaction.response.send_message("❌ กรุณาเชื่อมโยงบัญชี Spotify ของคุณก่อนโดยใช้ /link_spotify", ephemeral=True)
+        return
+    
+    try:
+        await asyncio.to_thread(sp_user.next_track)
+        await interaction.response.send_message("⏭️ ข้ามเพลงแล้ว", ephemeral=True)
+    except spotipy.exceptions.SpotifyException as e:
+        await interaction.response.send_message(f"❌ ข้อผิดพลาดในการข้าม Spotify: {e}", ephemeral=True)
+        logging.error(f"ข้อผิดพลาดในการข้าม Spotify สำหรับผู้ใช้ {interaction.user.id}: {e}", exc_info=True)
+    except Exception as e:
+        await interaction.response.send_message(f"❌ เกิดข้อผิดพลาดที่ไม่คาดคิด: {e}", ephemeral=True)
+        logging.error(f"ข้อผิดพลาดที่ไม่คาดคิดในคำสั่ง skip: {e}", exc_info=True)
+
+@tree.command(name="previous", description="เล่นเพลงก่อนหน้าบน Spotify")
+async def previous_spotify(interaction: discord.Interaction):
+    """คำสั่งสำหรับเล่นเพลงก่อนหน้าบน Spotify"""
+    sp_user = get_user_spotify_client(interaction.user.id)
+    if not sp_user:
+        await interaction.response.send_message("❌ กรุณาเชื่อมโยงบัญชี Spotify ของคุณก่อนโดยใช้ /link_spotify", ephemeral=True)
+        return
+    
+    try:
+        await asyncio.to_thread(sp_user.previous_track)
+        await interaction.response.send_message("⏮️ เล่นเพลงก่อนหน้าแล้ว", ephemeral=True)
+    except spotipy.exceptions.SpotifyException as e:
+        await interaction.response.send_message(f"❌ ข้อผิดพลาดในการเล่นเพลงก่อนหน้าบน Spotify: {e}", ephemeral=True)
+        logging.error(f"ข้อผิดพลาดในการเล่นเพลงก่อนหน้าบน Spotify สำหรับผู้ใช้ {interaction.user.id}: {e}", exc_info=True)
+    except Exception as e:
+        await interaction.response.send_message(f"❌ เกิดข้อผิดพลาดที่ไม่คาดคิด: {e}", ephemeral=True)
+        logging.error(f"ข้อผิดพลาดที่ไม่คาดคิดในคำสั่ง previous: {e}", exc_info=True)
+
+@tree.command(name="speak", description="ให้บอทพูดในช่องเสียง")
+@app_commands.describe(message="ข้อความที่จะให้บอทพูด")
+@app_commands.describe(lang="ภาษา (เช่น 'en', 'th')")
+async def speak(interaction: discord.Interaction, message: str, lang: str = 'en'):
+    """คำสั่งสำหรับให้บอทพูดข้อความที่ระบุในช่องเสียง (TTS)"""
+    global voice_client
+    if not voice_client or not voice_client.is_connected():
+        await interaction.response.send_message("❌ บอทไม่ได้อยู่ในช่องเสียง. ใช้ /join ก่อน", ephemeral=True)
+        return
+    
+    await interaction.response.defer() 
+    try:
+        tts_filename = f"tts_discord_{interaction.id}.mp3"
+        await asyncio.to_thread(gTTS(message, lang=lang).save, tts_filename) 
+        
+        source = discord.FFmpegPCMAudio(tts_filename, executable="ffmpeg")
+        voice_client.play(source, after=lambda e: asyncio.create_task(cleanup_audio(e, tts_filename))) 
+        
+        await interaction.followup.send(f"🗣️ กำลังพูด: **{message}** (ภาษา: {lang})")
+
+    except Exception as e:
+        await interaction.followup.send(f"❌ เกิดข้อผิดพลาดในการพูด: {e}")
+        logging.error(f"ข้อผิดพลาด TTS: {e}", exc_info=True)
+
+@tree.command(name="wake", description="ปลุกผู้ใช้ด้วย DM")
+@app_commands.describe(user="เลือกผู้ใช้")
+async def wake(interaction: discord.Interaction, user: discord.User):
+    """คำสั่งสำหรับส่งข้อความ DM ไปปลุกผู้ใช้"""
+    try:
+        await user.send(f"⏰ คุณถูก {interaction.user.display_name} ปลุก! ตื่นนน!")
+        await interaction.response.send_message(f"✅ ปลุก {user.name} แล้ว", ephemeral=True)
+        logging.info(f"{interaction.user.display_name} ปลุก {user.name}.")
+    except discord.Forbidden:
+        await interaction.response.send_message(f"❌ ไม่สามารถส่ง DM ถึง {user.name} ได้ (อาจจะปิด DM หรือเป็นบอท)", ephemeral=True)
+        logging.warning(f"ไม่สามารถส่ง DM ไปยัง {user.name} (Forbidden).")
+    except Exception as e:
+        await interaction.response.send_message(f"❌ เกิดข้อผิดพลาดในการส่ง DM: {e}", ephemeral=True)
+        logging.error(f"ไม่สามารถปลุกผู้ใช้: {e} ได้", exc_info=True)
 
 
-# --- Flask Routes for serving HTML templates and static files ---
+# --- Flask Routes (Web Interface) ---
 @app.route("/")
-async def index():
-    # Pass necessary data to the template
+async def index(): 
+    """หน้าแรกของเว็บอินเตอร์เฟซ แสดงสถานะการเชื่อมต่อ Discord และ Spotify"""
     current_session_id = session.get('session_id')
+    if not current_session_id:
+        current_session_id = os.urandom(16).hex()
+        session['session_id'] = current_session_id
+
     discord_user_id = web_logged_in_users.get(current_session_id)
-    is_discord_linked = bool(discord_user_id)
+    is_discord_linked = bool(discord_user_id) 
+
     is_spotify_linked = False
-    discord_username = None
 
-    if is_discord_linked:
+    # ตรวจสอบสถานะการเชื่อมโยง Spotify หากเชื่อมโยง Discord แล้ว
+    if discord_user_id:
         try:
-            user_obj = bot.get_user(discord_user_id)
-            if user_obj:
-                discord_username = user_obj.name
-            else:
-                # Fallback: fetch user if not in cache (may require privileged intents)
-                try:
-                    user_obj = await bot.fetch_user(discord_user_id)
-                    discord_username = user_obj.name
-                except Exception as e:
-                    logging.warning(f"Could not fetch Discord user {discord_user_id} for API: {e}")
-                    discord_username = str(discord_user_id) # Fallback to ID
-
             is_spotify_linked = await _check_spotify_link_status(discord_user_id)
         except Exception as e:
-            logging.error(f"Error checking Spotify link status for web user {discord_user_id}: {e}")
-            is_spotify_linked = False
+            logging.error(f"ข้อผิดพลาดในการตรวจสอบสถานะการเชื่อมโยง Spotify สำหรับผู้ใช้เว็บ {discord_user_id}: {e}")
+            is_spotify_linked = False 
 
-    # Removed passing firebase_config, app_id, initial_auth_token to template
-    # as these are now accessed directly from Canvas global JS variables.
     return render_template(
         "index.html",
         is_discord_linked=is_discord_linked,
         discord_user_id=discord_user_id,
-        discord_username=discord_username,
-        is_spotify_linked=is_spotify_linked,
-        base_url=request.url_root # Pass base_url to the template
+        is_spotify_linked=is_spotify_linked
     )
 
-
-# --- Flask Routes (API Endpoints for JS) ---
-# These endpoints will be called by index.js to get/send data
 @app.route("/api/auth_status")
-async def get_auth_status_api():
+async def get_auth_status():
+    """API endpoint เพื่อดึงสถานะการเชื่อมโยง Discord และ Spotify"""
     current_session_id = session.get('session_id')
     discord_user_id = web_logged_in_users.get(current_session_id)
     is_discord_linked = bool(discord_user_id)
     is_spotify_linked = False
-    discord_username = None
 
-    if discord_user_id:
+    if is_discord_linked:
         try:
-            user_obj = bot.get_user(discord_user_id)
-            if user_obj:
-                discord_username = user_obj.name
-            else:
-                try:
-                    user_obj = await bot.fetch_user(discord_user_id)
-                    discord_username = user_obj.name
-                except Exception as e:
-                    logging.warning(f"Could not fetch Discord user {discord_user_id} for API: {e}")
-                    discord_username = str(discord_user_id) # Fallback to ID
-
             is_spotify_linked = await _check_spotify_link_status(discord_user_id)
         except Exception as e:
-            logging.error(f"Error checking Spotify link status for web user {discord_user_id}: {e}")
+            logging.error(f"ข้อผิดพลาดในการตรวจสอบสถานะ Spotify สำหรับ API: {e}")
             is_spotify_linked = False
 
     return jsonify({
         "is_discord_linked": is_discord_linked,
-        "is_spotify_linked": is_spotify_linked,
-        "discord_user_id": discord_user_id,
-        "discord_username": discord_username
+        "is_spotify_linked": is_spotify_linked
     })
 
-# NEW: Route for getting Discord User ID
 @app.route("/api/discord_user_id")
-async def get_discord_user_id_api():
+def get_discord_user_id_api():
+    """API endpoint เพื่อดึง Discord User ID สำหรับเซสชันปัจจุบัน"""
     current_session_id = session.get('session_id')
     discord_user_id = web_logged_in_users.get(current_session_id)
     return jsonify({"discord_user_id": discord_user_id})
 
+
 @app.route("/login/discord")
 def login_discord():
+    """Redirect ไปยังหน้า Discord OAuth เพื่อเข้าสู่ระบบ Discord"""
     discord_auth_url = (
         f"https://discord.com/api/oauth2/authorize"
         f"?client_id={DISCORD_CLIENT_ID}"
@@ -937,78 +959,94 @@ def login_discord():
     return redirect(discord_auth_url)
 
 @app.route("/callback/discord")
-async def discord_callback(): # Changed to async def
+def discord_callback():
+    """Callback URL สำหรับ Discord OAuth หลังจากผู้ใช้อนุญาตหรือปฏิเสธ"""
     code = request.args.get("code")
     error = request.args.get("error")
     current_session_id = session.get('session_id') 
 
     if error:
         flash(f"❌ Discord OAuth error: {error}", "error")
-        return redirect(url_for("index", _external=True, _scheme='https'))
+        return redirect(url_for("index"))
 
     if not code:
         flash("❌ No authorization code received", "error")
-        return redirect(url_for("index", _external=True, _scheme='https'))
+        return redirect(url_for("index"))
 
     try:
-        # Call _fetch_discord_token_and_user directly in Flask's async context
-        token_info, user_data = await _fetch_discord_token_and_user(code)
+        # รันฟังก์ชัน async ในเธรดแยกโดยใช้ asyncio.run_coroutine_threadsafe
+        future = asyncio.run_coroutine_threadsafe(
+            _fetch_discord_token_and_user(code),
+            bot.loop
+        )
+        token_info, user_data = future.result(timeout=10) # รอผลลัพธ์สูงสุด 10 วินาที
         
         discord_user_id = int(user_data["id"])
-        
+        discord_username = user_data["username"]
+
         if not current_session_id:
             current_session_id = os.urandom(16).hex()
             session['session_id'] = current_session_id
 
-        # Call update_user_data_in_firestore in the bot's async context
-        await update_user_data_in_firestore(discord_user_id, flask_session_to_add=current_session_id)
+        # เพิ่ม Flask session ID เข้าไปใน Firestore ของผู้ใช้
+        asyncio.run_coroutine_threadsafe(
+            update_user_data_in_firestore(discord_user_id, flask_session_to_add=current_session_id),
+            bot.loop
+        ).result()
 
+        # อัปเดต web_logged_in_users ในหน่วยความจำ
         web_logged_in_users[current_session_id] = discord_user_id
-        session['discord_user_id_for_web'] = discord_user_id
+        session['discord_user_id_for_web'] = discord_user_id # ใช้เก็บใน Flask session ด้วย
 
-        flash(f"✅ Successfully logged in with Discord!", "success")
+        flash(f"✅ Discord login successful: {discord_username}", "success")
 
     except Exception as e:
-        flash(f"❌ Error logging in with Discord: {e}", "error")
+        flash(f"❌ Error during Discord login: {e}", "error")
         logging.error(f"Discord OAuth error: {e}", exc_info=True)
     
-    return redirect(url_for("index", _external=True, _scheme='https')) 
+    return redirect(url_for("index")) 
 
 @app.route("/login/spotify/<int:discord_user_id_param>")
-async def login_spotify_web(discord_user_id_param: int): # Changed to async def
+def login_spotify_web(discord_user_id_param: int):
+    """
+    Redirect ไปยังหน้า Spotify OAuth เพื่อเข้าสู่ระบบ Spotify
+    มีการตรวจสอบว่า Discord User ID ที่ส่งมาตรงกับที่เข้าสู่ระบบปัจจุบันหรือไม่
+    """
     current_session_id = session.get('session_id')
     logged_in_discord_user_id = web_logged_in_users.get(current_session_id)
 
+    # ป้องกันการเชื่อมโยง Spotify ให้กับ Discord User ID ที่ไม่ตรงกับที่เข้าสู่ระบบ
     if logged_in_discord_user_id != discord_user_id_param:
-        flash("❌ Discord User ID mismatch. Please log in with Discord again.", "error")
-        return redirect(url_for("index", _external=True, _scheme='https'))
+        flash("❌ Discord User ID mismatch. Please login with Discord again.", "error")
+        return redirect(url_for("index"))
 
     auth_manager = SpotifyOAuth(
         client_id=SPOTIPY_CLIENT_ID,
         client_secret=SPOTIPY_CLIENT_SECRET,
         redirect_uri=SPOTIPY_REDIRECT_URI,
         scope=SPOTIPY_SCOPES,
-        show_dialog=True
+        show_dialog=True # บังคับให้ผู้ใช้อนุญาตเสมอ
     )
-    # Blocking call, run in executor
-    auth_url = await asyncio.to_thread(auth_manager.get_authorize_url)
+    auth_url = auth_manager.get_authorize_url()
     
+    # เก็บ Discord User ID ไว้ใน session เพื่อใช้ใน callback
     session['spotify_auth_discord_user_id'] = discord_user_id_param
     return redirect(auth_url)
 
 @app.route("/callback/spotify")
-async def spotify_callback(): # Changed to async def
+def spotify_callback():
+    """Callback URL สำหรับ Spotify OAuth หลังจากผู้ใช้อนุญาตหรือปฏิเสธ"""
     code = request.args.get("code")
     error = request.args.get("error")
-    discord_user_id = session.pop('spotify_auth_discord_user_id', None) 
+    discord_user_id = session.pop('spotify_auth_discord_user_id', None) # ดึง Discord User ID ออกจาก session
     
     if error:
         flash(f"❌ Spotify OAuth error: {error}", "error")
-        return redirect(url_for("index", _external=True, _scheme='https'))
+        return redirect(url_for("index"))
 
     if not code or not discord_user_id:
         flash("❌ Authorization code or Discord user ID for Spotify linking is missing. Please try again.", "error")
-        return redirect(url_for("index", _external=True, _scheme='https'))
+        return redirect(url_for("index"))
 
     try:
         auth_manager = SpotifyOAuth(
@@ -1018,14 +1056,20 @@ async def spotify_callback(): # Changed to async def
             scope=SPOTIPY_SCOPES,
         )
 
-        # Use asyncio.to_thread for the blocking call (get_access_token)
-        token_info = await asyncio.to_thread(auth_manager.get_access_token, code)
+        future = asyncio.run_coroutine_threadsafe(
+            asyncio.to_thread(auth_manager.get_access_token, code),
+            bot.loop
+        )
+        token_info = future.result(timeout=10)
 
         sp_user = spotipy.Spotify(auth_manager=auth_manager)
-        spotify_users[discord_user_id] = sp_user
-        
-        # Use await directly as spotify_callback is already async
-        await update_user_data_in_firestore(discord_user_id, spotify_token_info=token_info)
+        spotify_users[discord_user_id] = sp_user # เก็บ Spotify client ในแคช
+
+        # บันทึก Spotify token info ลง Firestore
+        asyncio.run_coroutine_threadsafe(
+            update_user_data_in_firestore(discord_user_id, spotify_token_info=token_info),
+            bot.loop
+        ).result() # รอให้การอัปเดต Firestore เสร็จสมบูรณ์
 
         flash("✅ Spotify linked successfully!", "success")
         
@@ -1033,481 +1077,177 @@ async def spotify_callback(): # Changed to async def
         flash(f"❌ Error linking Spotify: {e}. Please ensure your redirect URI is correct in Spotify Developer Dashboard.", "error")
         logging.error(f"Spotify callback error for user {discord_user_id}: {e}", exc_info=True)
     
-    return redirect(url_for("index", _external=True, _scheme='https'))
+    return redirect(url_for("index"))
 
 # --- Flask routes for controlling bot from web ---
-@app.route("/web_control/add_search", methods=["POST"])
-async def add_search_web_control():
-    query = request.form.get("query")
-    if not query:
-        return jsonify({"status": "error", "message": "No query provided."}), 400
-
-    current_session_id = session.get('session_id')
-    discord_user_id = web_logged_in_users.get(current_session_id)
-
-    if not discord_user_id:
-        return jsonify({"status": "error", "message": "Please log in with Discord first to use music control."}), 401
-
-    target_channel = None
-    if voice_client and voice_client.is_connected():
-        target_channel = voice_client.channel
+@app.route("/web_control/add", methods=["POST"])
+def add_web_queue():
+    """เพิ่ม URL เพลงลงในคิวของบอท Discord (สำหรับ YouTube/SoundCloud)"""
+    url = request.form.get("url")
+    if url:
+        queue.append(url)
+        flash(f"Added to queue: {url}", "info")
+        logging.info(f"Added to queue from web: {url}")
     else:
-        try:
-            await bot_ready.wait() 
-            user = bot.get_user(discord_user_id)
-            if user and user.voice and user.voice.channel:
-                target_channel = user.voice.channel
-                if not voice_client or not voice_client.is_connected():
-                    try:
-                        voice_client = await target_channel.connect()
-                        logging.info(f"Bot automatically joined {target_channel.name} for web playback.")
-                    except discord.ClientException as e:
-                        logging.error(f"Could not automatically join voice channel: {e}")
-                        return jsonify({"status": "error", "message": f"❌ Could not automatically join voice channel: {e}"}), 500
-            else:
-                return jsonify({"status": "error", "message": "❌ You are not in a Discord voice channel or the bot cannot access it"}), 400
-        except Exception as e:
-            logging.error(f"Error finding user's voice channel for web queue add/search: {e}", exc_info=True)
-            return jsonify({"status": "error", "message": f"❌ Error: {e}"}), 500
+        flash("No URL provided to add to queue.", "error")
+    return redirect(url_for("index"))
 
-    if not target_channel:
-        return jsonify({"status": "error", "message": "❌ Bot is not in a voice channel. Please use the `/join` command in Discord first."}), 400
-
-    # Determine if it's a Spotify link or a YouTube/general search
-    if "spotify.com/" in query:
-        sp_user = get_user_spotify_client(discord_user_id)
-        if not sp_user:
-            return jsonify({"status": "error", "message": "Please link your Spotify account first to play Spotify links."}), 403
-
-        try:
-            track_uris = []
-            context_uri = None
-            response_msg_title = ""
-
-            if "spotify.com/track/" in query:
-                track_id = query.split('/')[-1].split('?')[0]
-                track_uri = f"spotify:track:{track_id}"
-                track = await asyncio.to_thread(sp_user.track, track_uri)
-                track_uris.append(track_uri)
-                response_msg_title = f"**{track['name']}** by **{track['artists'][0]['name']}**"
-            elif "spotify.com/playlist/" in query:
-                playlist_id = query.split('/')[-1].split('?')[0]
-                context_uri = f"spotify:playlist:{playlist_id}"
-                playlist = await asyncio.to_thread(sp_user.playlist, playlist_id)
-                response_msg_title = f"Playlist: **{playlist['name']}**"
-            elif "spotify.com/album/" in query:
-                album_id = query.split('/')[-1].split('?')[0]
-                context_uri = f"spotify:album:{album_id}"
-                album = await asyncio.to_thread(sp_user.album, album_id)
-                response_msg_title = f"Album: **{album['name']}**"
-            else: # Should not happen if "spotify.com/" is checked, but as fallback
-                return jsonify({"status": "error", "message": "Invalid Spotify link provided."}), 400
-
-            devices = await asyncio.to_thread(sp_user.devices)
-            active_device_id = None
-            for device in devices['devices']:
-                if device['is_active']:
-                    active_device_id = device['id']
-                    break
-            
-            if not active_device_id:
-                return jsonify({"status": "error", "message": "No active Spotify client found. Please open your Spotify app and play something there first."}), 404
-
-            if context_uri:
-                await asyncio.to_thread(sp_user.start_playback, device_id=active_device_id, context_uri=context_uri)
-            else:
-                await asyncio.to_thread(sp_user.start_playback, device_id=active_device_id, uris=track_uris)
-            
-            return jsonify({"status": "success", "message": f"Playing Spotify: {response_msg_title}"})
-
-        except spotipy.exceptions.SpotifyException as e:
-            error_message = f"Spotify error: {e.msg}"
-            if e.http_status == 401:
-                error_message = "Spotify token expired. Please relink your account."
-                await update_user_data_in_firestore(discord_user_id, spotify_token_info=firestore.DELETE_FIELD)
-                if discord_user_id in spotify_users:
-                    del spotify_users[discord_user_id]
-            elif e.http_status == 404 and "Device not found" in str(e):
-                error_message = "No active Spotify client found. Please open your Spotify app."
-            elif e.http_status == 403:
-                error_message = "Spotify playback error: You might need a Spotify Premium account or have playback restrictions."
-            
-            logging.error(f"Spotify error for user {discord_user_id}: {e}", exc_info=True)
-            return jsonify({"status": "error", "message": error_message}), e.http_status or 500
-        except Exception as e:
-            logging.error(f"Unexpected error in web_control_play_spotify_search: {e}", exc_info=True)
-            return jsonify({"status": "error", "message": f"An unexpected error occurred: {e}"}), 500
-    else: # Treat as YouTube/general music queue
-        queue.append(query)
-        logging.info(f"Added to queue from web: {query}")
-
-        if not voice_client.is_playing() and not voice_client.is_paused():
-            await _play_next_in_queue(target_channel)
-
-        return jsonify({"status": "success", "message": f"Added '{query}' to the queue!"})
-
-# NEW: Route for playing music from web
 @app.route("/web_control/play")
-async def play_web_control():
-    current_session_id = session.get('session_id')
-    discord_user_id = web_logged_in_users.get(current_session_id)
-    if not discord_user_id:
-        return jsonify({"status": "error", "message": "Please log in with Discord first."}), 401
+def play_web_control():
+    """สั่งให้บอทเริ่มเล่นเพลงถัดไปในคิว (สำหรับ YouTube/SoundCloud)"""
+    if not bot_ready.is_set():
+        flash("Bot is not ready yet. Please wait a moment.", "warning")
+        return redirect("/")
 
-    target_channel = None
-    if voice_client and voice_client.is_connected():
-        target_channel = voice_client.channel
+    # ตรวจสอบว่าบอทอยู่ในช่องเสียงและไม่ได้กำลังเล่นอยู่
+    if voice_client and not voice_client.is_playing():
+        if voice_client.channel: # ตรวจสอบว่า channel object มีอยู่จริง
+            asyncio.run_coroutine_threadsafe(
+                _play_next_in_queue(bot.get_channel(voice_client.channel.id)),
+                bot.loop
+            )
+            flash("Attempting to play next in queue.", "info")
+            logging.info("Triggered play via web.")
+        else:
+            flash("Bot is in a voice channel but channel object is unavailable.", "error")
     else:
-        try:
-            await bot_ready.wait() 
-            user = bot.get_user(discord_user_id)
-            if user and user.voice and user.voice.channel:
-                target_channel = user.voice.channel
-                if not voice_client or not voice_client.is_connected():
-                    try:
-                        voice_client = await target_channel.connect()
-                        logging.info(f"Bot automatically joined {target_channel.name} for web playback.")
-                    except discord.ClientException as e:
-                        logging.error(f"Could not automatically join voice channel: {e}")
-                        return jsonify({"status": "error", "message": f"❌ Could not automatically join voice channel: {e}"}), 500
-            else:
-                return jsonify({"status": "error", "message": "❌ You are not in a Discord voice channel or the bot cannot access it"}), 400
-        except Exception as e:
-            logging.error(f"Error finding user's voice channel for web play: {e}", exc_info=True)
-            return jsonify({"status": "error", "message": f"❌ Error: {e}"}), 500
-
-    if not target_channel:
-        return jsonify({"status": "error", "message": "❌ Bot is not in a voice channel. Please use the `/join` command in Discord first."}), 400
-
-    if voice_client and voice_client.is_paused():
-        voice_client.resume()
-        return jsonify({"status": "success", "message": "Resumed playing from queue."})
-    elif voice_client and voice_client.is_playing():
-        return jsonify({"status": "warning", "message": "Already playing."})
-    elif queue:
-        await _play_next_in_queue(target_channel)
-        return jsonify({"status": "success", "message": "Started playing from queue."})
-    else:
-        return jsonify({"status": "warning", "message": "Queue is empty. Add songs first."})
-
+        flash("Bot is not in a voice channel or is already playing.", "warning")
+    return redirect("/")
 
 @app.route("/web_control/pause")
-async def pause_web_control(): # Changed to async def
-    current_session_id = session.get('session_id')
-    discord_user_id = web_logged_in_users.get(current_session_id)
-    if not discord_user_id:
-        return jsonify({"status": "error", "message": "Please log in with Discord first."}), 401
-    
-    # Check if bot is playing from its queue first
+def pause_web_control():
+    """สั่งให้บอทหยุดเล่นเพลงชั่วคราว (สำหรับ YouTube/SoundCloud)"""
     if voice_client and voice_client.is_playing():
         voice_client.pause()
-        return jsonify({"status": "success", "message": "Bot queue playback paused."})
-    
-    # If not, try to pause Spotify playback
-    sp_user = get_user_spotify_client(discord_user_id)
-    if sp_user:
-        try:
-            await asyncio.to_thread(sp_user.pause_playback)
-            return jsonify({"status": "success", "message": "Spotify playback paused."})
-        except spotipy.exceptions.SpotifyException as e:
-            logging.error(f"Error pausing Spotify from web: {e}", exc_info=True)
-            return jsonify({"status": "error", "message": f"Spotify error: {e.msg}"}), e.http_status or 500
-    
-    return jsonify({"status": "warning", "message": "Nothing to pause."})
-
+        flash("Playback paused.", "info")
+        logging.info("Paused via web.")
+    else:
+        flash("Nothing to pause.", "warning")
+    return redirect("/")
 
 @app.route("/web_control/resume")
-async def resume_web_control(): # Changed to async def
-    current_session_id = session.get('session_id')
-    discord_user_id = web_logged_in_users.get(current_session_id)
-    if not discord_user_id:
-        return jsonify({"status": "error", "message": "Please log in with Discord first."}), 401
-
-    # Check if bot has a paused queue
+def resume_web_control():
+    """สั่งให้บอทเล่นเพลงต่อจากที่หยุดไว้ (สำหรับ YouTube/SoundCloud)"""
     if voice_client and voice_client.is_paused():
         voice_client.resume()
-        return jsonify({"status": "success", "message": "Bot queue playback resumed."})
-
-    # If not, try to resume Spotify playback
-    sp_user = get_user_spotify_client(discord_user_id)
-    if sp_user:
-        try:
-            await asyncio.to_thread(sp_user.start_playback)
-            return jsonify({"status": "success", "message": "Spotify playback resumed."})
-        except spotipy.exceptions.SpotifyException as e:
-            logging.error(f"Error resuming Spotify from web: {e}", exc_info=True)
-            return jsonify({"status": "error", "message": f"Spotify error: {e.msg}"}), e.http_status or 500
-
-    return jsonify({"status": "warning", "message": "Nothing to resume."})
-
+        flash("Playback resumed.", "info")
+        logging.info("Resumed via web.")
+    else:
+        flash("Nothing to resume.", "warning")
+    return redirect("/")
 
 @app.route("/web_control/stop")
-async def stop_web_control(): # Changed to async def
-    global queue, voice_client, current_playing_youtube_info
-    
-    current_session_id = session.get('session_id')
-    discord_user_id = web_logged_in_users.get(current_session_id)
-    if not discord_user_id:
-        return jsonify({"status": "error", "message": "Please log in with Discord first."}), 401
-
-    queue.clear()
-    current_playing_youtube_info = {} # Clear current playing info
+def stop_web_control():
+    """สั่งให้บอทหยุดเล่นเพลงและล้างคิวทั้งหมด (สำหรับ YouTube/SoundCloud)"""
+    global queue
+    queue.clear() 
     if voice_client and (voice_client.is_playing() or voice_client.is_paused()):
-        voice_client.stop()
-        await asyncio.to_thread(voice_client.disconnect) # Disconnect from voice channel too
-        voice_client = None
-        return jsonify({"status": "success", "message": "Playback stopped and queue cleared."})
-    
-    # If no bot queue, try to stop Spotify playback
-    sp_user = get_user_spotify_client(discord_user_id)
-    if sp_user:
-        try:
-            await asyncio.to_thread(sp_user.pause_playback) # Spotify doesn't have a direct 'stop', pause is closest
-            return jsonify({"status": "success", "message": "Spotify playback stopped."})
-        except spotipy.exceptions.SpotifyException as e:
-            logging.error(f"Error stopping Spotify from web: {e}", exc_info=True)
-            return jsonify({"status": "error", "message": f"Spotify error: {e.msg}"}), e.http_status or 500
-
-    return jsonify({"status": "warning", "message": "Nothing to stop."})
+        voice_client.stop() 
+        flash("Playback stopped and queue cleared.", "info")
+        logging.info("Stopped via web and cleared queue.")
+    else:
+        flash("Nothing to stop.", "warning")
+    return redirect("/")
 
 @app.route("/web_control/skip")
-async def skip_web_control(): # Changed to async def
-    global voice_client
+def skip_web_control():
+    """สั่งให้ Spotify ข้ามเพลงปัจจุบัน"""
     current_session_id = session.get('session_id')
     discord_user_id = web_logged_in_users.get(current_session_id)
+    
     if not discord_user_id:
-        return jsonify({"status": "error", "message": "Please log in with Discord first."}), 401
+        flash("Please login with Discord first to control Spotify playback.", "error")
+        return redirect("/")
 
-    # Prioritize skipping bot's internal queue
-    if voice_client and voice_client.is_playing():
-        voice_client.stop() # Stopping effectively skips by triggering the 'after' callback
-        return jsonify({"status": "success", "message": "Bot queue song skipped."})
-
-    # If not playing bot's queue, try to skip Spotify
     sp_user = get_user_spotify_client(discord_user_id)
-    if sp_user:
-        try:
-            await asyncio.to_thread(sp_user.next_track)
-            return jsonify({"status": "success", "message": "Spotify song skipped."})
-        except spotipy.exceptions.SpotifyException as e:
-            logging.error(f"Error skipping Spotify from web: {e}", exc_info=True)
-            return jsonify({"status": "error", "message": f"Spotify error: {e.msg}"}), e.http_status or 500
-    
-    return jsonify({"status": "warning", "message": "Nothing to skip."})
+    if not sp_user:
+        flash("Your Spotify is not linked or token expired. Please re-link.", "error")
+        return redirect("/")
 
-@app.route("/web_control/skip_previous")
-async def skip_previous_web_control(): # Added this route for previous track
-    current_session_id = session.get('session_id')
-    discord_user_id = web_logged_in_users.get(current_session_id)
-    if not discord_user_id:
-        return jsonify({"status": "error", "message": "Please log in with Discord first."}), 401
-    
-    sp_user = get_user_spotify_client(discord_user_id)
-    if sp_user:
-        try:
-            await asyncio.to_thread(sp_user.previous_track)
-            return jsonify({"status": "success", "message": "Previous song played on Spotify."})
-        except spotipy.exceptions.SpotifyException as e:
-            logging.error(f"Error playing previous Spotify song from web: {e}", exc_info=True)
-            return jsonify({"status": "error", "message": f"Spotify error: {e.msg}"}), e.http_status or 500
-    
-    return jsonify({"status": "warning", "message": "Previous song function only works for Spotify."})
-
-
-@app.route("/web_control/set_volume", methods=["GET"]) # Changed to GET to easily pass volume in URL
-async def set_volume_web_control(): # Changed to async def
-    global volume, voice_client
-    vol_delta_str = request.args.get("vol") # Changed to vol_delta_str to indicate it's a change
-    
-    if not vol_delta_str:
-        return jsonify({"status": "error", "message": "No volume change value provided."}), 400
-    
     try:
-        vol_change = float(vol_delta_str)
-        new_volume = volume + vol_change # Apply the change
-        
-        # Clamp volume between 0.0 and 2.0 (or adjust range as needed)
-        volume = max(0.0, min(2.0, new_volume))
-
-        if voice_client and voice_client.source:
-            voice_client.source.volume = volume
-        
-        return jsonify({"status": "success", "message": f"Volume adjusted to {volume*100:.0f}%"})
-    except ValueError:
-        return jsonify({"status": "error", "message": "Invalid volume value."}), 400
+        # ดำเนินการเรียก Spotify API ใน bot's event loop
+        asyncio.run_coroutine_threadsafe(
+            asyncio.to_thread(sp_user.next_track),
+            bot.loop
+        ).result()
+        flash("Spotify track skipped.", "info")
+        logging.info("Spotify track skipped via web.")
+    except spotipy.exceptions.SpotifyException as e:
+        flash(f"Error skipping Spotify track: {e}", "error")
+        logging.error(f"Error skipping Spotify track via web for user {discord_user_id}: {e}", exc_info=True)
     except Exception as e:
-        logging.error(f"Error adjusting volume from web: {e}", exc_info=True)
-        return jsonify({"status": "error", "message": f"An unexpected error occurred: {e}"}), 500
+        flash(f"An unexpected error occurred while skipping: {e}", "error")
+        logging.error(f"Unexpected error skipping Spotify track via web for user {discord_user_id}: {e}", exc_info=True)
+    return redirect("/")
 
-@app.route("/web_control/volume_up_web_control")
-async def volume_up_web_control():
-    return await set_volume_web_control()
-
-@app.route("/web_control/volume_down_web_control")
-async def volume_down_web_control():
-    return await set_volume_web_control()
-
-
-@app.route("/web_control/toggle_shuffle", methods=["POST"])
-async def toggle_shuffle_web_control():
-    global is_shuffling
-    is_shuffling = not is_shuffling
-    if is_shuffling:
-        # Shuffle the current queue
-        random.shuffle(queue)
-        logging.info("Shuffle enabled. Queue shuffled.")
-        return jsonify({"status": "success", "message": "Shuffle enabled and queue shuffled.", "is_shuffling": is_shuffling})
-    else:
-        logging.info("Shuffle disabled.")
-        return jsonify({"status": "success", "message": "Shuffle disabled.", "is_shuffling": is_shuffling})
-
-@app.route("/web_control/toggle_loop", methods=["POST"])
-async def toggle_loop_web_control():
-    global is_looping
-    is_looping = not is_looping
-    if is_looping:
-        logging.info("Loop enabled.")
-        return jsonify({"status": "success", "message": "Loop enabled.", "is_looping": is_looping})
-    else:
-        logging.info("Loop disabled.")
-        return jsonify({"status": "success", "message": "Loop disabled.", "is_looping": is_looping})
-
-
-# --- New API Endpoints for Web UI Data ---
-@app.route("/api/now_playing_data")
-async def get_now_playing_data():
+@app.route("/web_control/previous")
+def prev_spotify_web_control():
+    """สั่งให้ Spotify เล่นเพลงก่อนหน้า"""
     current_session_id = session.get('session_id')
     discord_user_id = web_logged_in_users.get(current_session_id)
-
+    
     if not discord_user_id:
-        # If not logged in with Discord, return a clear status
-        return jsonify({
-            "status": "not_logged_in",
-            "is_playing": False,
-            "is_paused": False,
-            "is_shuffling": is_shuffling,
-            "is_looping": is_looping,
-            "volume": volume
-        }), 200
+        flash("Please login with Discord first to control Spotify playback.", "error")
+        return redirect("/")
 
     sp_user = get_user_spotify_client(discord_user_id)
-    
-    # Check Spotify playback first
-    if sp_user:
-        try:
-            playback_state = await asyncio.to_thread(sp_user.current_playback)
-            if playback_state and playback_state['is_playing']:
-                track = playback_state['item']
-                return jsonify({
-                    "status": "playing_spotify",
-                    "title": track['name'],
-                    "artist": track['artists'][0]['name'],
-                    "album_cover_url": track['album']['images'][0]['url'] if track['album']['images'] else "https://placehold.co/400x400/3498db/ffffff?text=No+Cover",
-                    "progress_ms": playback_state['progress_ms'],
-                    "duration_ms": track['duration_ms'],
-                    "is_playing": True,
-                    "is_paused": False,
-                    "is_shuffling": is_shuffling,
-                    "is_looping": is_looping,
-                    "volume": volume
-                })
-            elif playback_state: # Spotify is paused
-                 return jsonify({
-                    "status": "spotify_paused",
-                    "title": playback_state['item']['name'],
-                    "artist": playback_state['item']['artists'][0]['name'],
-                    "album_cover_url": playback_state['item']['album']['images'][0]['url'] if playback_state['item']['album']['images'] else "https://placehold.co/400x400/3498db/ffffff?text=No+Cover",
-                    "progress_ms": playback_state['progress_ms'],
-                    "duration_ms": playback_state['item']['duration_ms'],
-                    "is_playing": False,
-                    "is_paused": True,
-                    "is_shuffling": is_shuffling,
-                    "is_looping": is_looping,
-                    "volume": volume
-                })
-        except spotipy.exceptions.SpotifyException as e:
-            logging.error(f"Spotify API error fetching playback for {discord_user_id}: {e}")
-            if e.http_status == 401:
-                asyncio.run_coroutine_threadsafe(
-                    update_user_data_in_firestore(discord_user_id, spotify_token_info=firestore.DELETE_FIELD),
-                    bot.loop
-                )
-                if discord_user_id in spotify_users:
-                    del spotify_users[discord_user_id]
-                return jsonify({"status": "spotify_error", "message": "Spotify token expired. Please relink.", "is_playing": False, "is_paused": False, "is_shuffling": is_shuffling, "is_looping": is_looping, "volume": volume}), 200
-            return jsonify({"status": "spotify_error", "message": str(e), "is_playing": False, "is_paused": False, "is_shuffling": is_shuffling, "is_looping": is_looping, "volume": volume}), 200
-        except Exception as e:
-            logging.error(f"Unexpected error fetching Spotify playback for {discord_user_id}: {e}")
-            return jsonify({"status": "error", "message": "Failed to fetch Spotify playback.", "is_playing": False, "is_paused": False, "is_shuffling": is_shuffling, "is_looping": is_looping, "volume": volume}), 200
-    
-    # If Spotify is not playing/linked, check bot's internal queue playback (YouTube/SoundCloud)
-    if voice_client and (voice_client.is_playing() or voice_client.is_paused()) and current_playing_youtube_info:
-        return jsonify({
-            "status": "playing_youtube",
-            "title": current_playing_youtube_info.get('title', 'Unknown Title'),
-            "artist": "YouTube/SoundCloud", 
-            "album_cover_url": current_playing_youtube_info.get('thumbnail', 'https://placehold.co/400x400/FF0000/FFFFFF?text=YouTube'),
-            "progress_ms": voice_client.source.play_time * 1000 if voice_client.source else 0, # Approximate progress
-            "duration_ms": current_playing_youtube_info.get('duration', 0) * 1000,
-            "is_playing": voice_client.is_playing(),
-            "is_paused": voice_client.is_paused(),
-            "is_shuffling": is_shuffling,
-            "is_looping": is_looping,
-            "volume": volume
-        })
-    elif voice_client and voice_client.is_paused() and current_playing_youtube_info:
-         return jsonify({
-            "status": "youtube_paused",
-            "title": current_playing_youtube_info.get('title', 'Unknown Title'),
-            "artist": "YouTube/SoundCloud", 
-            "album_cover_url": current_playing_youtube_info.get('thumbnail', 'https://placehold.co/400x400/FF0000/FFFFFF?text=YouTube'),
-            "progress_ms": voice_client.source.play_time * 1000 if voice_client.source else 0, # Approximate progress
-            "duration_ms": current_playing_youtube_info.get('duration', 0) * 1000,
-            "is_playing": False,
-            "is_paused": True,
-            "is_shuffling": is_shuffling,
-            "is_looping": is_looping,
-            "volume": volume
-        })
-    
-    # No music is playing anywhere
-    return jsonify({
-        "status": "no_music_playing",
-        "is_playing": False,
-        "is_paused": False,
-        "is_shuffling": is_shuffling,
-        "is_looping": is_looping,
-        "volume": volume
-    })
+    if not sp_user:
+        flash("Your Spotify is not linked or token expired. Please re-link.", "error")
+        return redirect("/")
 
-@app.route("/api/queue_data")
-async def get_queue_data():
-    # For now, just return the global queue list.
-    # If detailed info needed for each item, would need to store more in queue.
-    return jsonify({"queue": queue}) 
+    try:
+        # ดำเนินการเรียก Spotify API ใน bot's event loop
+        asyncio.run_coroutine_threadsafe(
+            asyncio.to_thread(sp_user.previous_track),
+            bot.loop
+        ).result()
+        flash("Spotify track changed to previous.", "info")
+        logging.info("Spotify track changed to previous via web.")
+    except spotipy.exceptions.SpotifyException as e:
+        flash(f"Error going to previous Spotify track: {e}", "error")
+        logging.error(f"Error going to previous Spotify track via web for user {discord_user_id}: {e}", exc_info=True)
+    except Exception as e:
+        flash(f"An unexpected error occurred while going to previous track: {e}", "error")
+        logging.error(f"Unexpected error going to previous Spotify track via web for user {discord_user_id}: {e}", exc_info=True)
+    return redirect("/")
 
+@app.route("/web_control/volume_up")
+def volume_up_web_control():
+    """เพิ่มระดับเสียงของบอท Discord (สำหรับ YouTube/SoundCloud)"""
+    global volume
+    volume = min(volume + 0.1, 2.0) # ระดับเสียงสูงสุด 2.0 (200%)
+    if voice_client and voice_client.source: 
+        voice_client.source.volume = volume
+    flash(f"Volume increased to {volume*100:.0f}%", "info")
+    logging.info(f"Volume up: {volume}")
+    return redirect("/")
+
+@app.route("/web_control/volume_down")
+def volume_down_web_control():
+    """ลดระดับเสียงของบอท Discord (สำหรับ YouTube/SoundCloud)"""
+    global volume
+    volume = max(volume - 0.1, 0.1) # ระดับเสียงต่ำสุด 0.1 (10%) เพื่อไม่ให้เงียบสนิท
+    if voice_client and voice_client.source:
+        voice_client.source.volume = volume
+    flash(f"Volume decreased to {volume*100:.0f}%", "info")
+    logging.info(f"Volume down: {volume}")
+    return redirect("/")
 
 # --- Run Flask + Discord bot ---
-def run_web_app(): # Renamed function to clarify it's for Flask
-    # Load Discord web login sessions when Flask app starts
-    # Load Firebase data in the Flask thread using asyncio.run
-    # to give it its own Event Loop
-    logging.info("Loading user data from Firestore in web thread...")
-    asyncio.run(load_all_user_data_from_firestore()) 
-    logging.info("User data from Firestore loaded successfully in web thread.")
-
-    # Flask app should run in its own thread
+def run_web():
+    """ฟังก์ชันสำหรับรัน Flask web server ในเธรดแยก"""
+    # Flask app ควรจะรันในเธรดของตัวเอง
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=False)
 
 if __name__ == "__main__":
-    print("\n--- Starting Bot and Web Server ---")
-    print("Ensure FFmpeg and Opus are installed for voice functionality")
-    print("-----------------------------------\n")
+    print("\n--- Initializing Bot and Web Server ---")
+    print("Ensure FFmpeg and Opus are installed for voice functions.")
+    print("---------------------------------------\n")
 
-    # Start Flask web server in a separate thread
-    web_thread = threading.Thread(target=run_web_app) # Call the renamed function
+    # เริ่ม Flask web server ในเธรดแยก
+    web_thread = threading.Thread(target=run_web)
     web_thread.start()
     
-    # Run Discord bot (This is a Blocking Call)
-    # bot.run() will create and run its own asyncio event loop
+    # รัน Discord bot (นี่เป็นการเรียกแบบบล็อก)
+    # bot.run() ควรเป็นคำสั่งสุดท้ายใน main thread
     bot.run(DISCORD_TOKEN)
