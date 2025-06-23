@@ -58,13 +58,6 @@
             transform: scale(1.05);
         }
 
-        .album-art img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.3s ease;
-        }
-
         .album-art.playing img {
             animation: rotate 20s linear infinite;
         }
@@ -489,43 +482,56 @@
         </div>
         
         <div class="auth-container">
-            <a href="{{ url_for('login_discord') }}" class="auth-btn discord-btn" id="discordLoginBtn" style="{% if is_discord_linked %}display: none;{% else %}display: flex;{% endif %}">
-                <svg class="auth-icon" viewBox="0 0 24 24">
-                    <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419-.0188 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1568 2.4189Z"/>
-                </svg>
-                Login with Discord
-            </a>
-            
-            <a href="#" class="auth-btn spotify-btn" id="spotifyLoginBtn" style="{% if not is_discord_linked or is_spotify_linked %}display: none;{% else %}display: flex;{% endif %}">
-                <svg class="auth-icon" viewBox="0 0 24 24">
-                    <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.6 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.42 1.56-.299.421-1.02.599-1.559.3z"/>
-                </svg>
-                Connect Spotify
-            </a>
-            
-            <div class="user-info" id="userInfo" style="{% if not is_discord_linked or not is_spotify_linked %}display: none;{% else %}display: flex;{% endif %}">
-                <div class="status-indicator"></div>
-                <span id="userStatus">
-                    {% if is_discord_linked and is_spotify_linked %}Discord & Spotify Connected{% elif is_discord_linked %}Discord Connected{% else %}Not Connected{% endif %}
-                </span>
-            </div>
-        </div>
+    <!-- Discord Login Button -->
+    <a href="{{ url_for('login_discord', _external=True) }}" class="auth-btn discord-btn" id="discordLoginBtn"
+       style="{% if is_discord_linked %}display: none;{% else %}display: flex;{% endif %}">
+        <svg class="auth-icon" viewBox="0 0 24 24">
+            <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152..."/>
+        </svg>
+        Login with Discord
+    </a>
 
-        <div class="web-controls" style="{% if not is_discord_linked or not is_spotify_linked %}display: none;{% else %}display: flex;{% endif %}">
-            <input type="text" id="queueUrlInput" placeholder="Add YouTube/SoundCloud URL" class="queue-input">
-            <button id="addToQueueBtn" class="add-queue-btn">Add to Queue</button>
-            
-            <div class="control-grid">
-                <button id="playControlBtn" class="web-control-btn bg-blue-600">Play</button>
-                <button id="pauseControlBtn" class="web-control-btn bg-yellow-600">Pause</button>
-                <button id="resumeControlBtn" class="web-control-btn bg-green-600">Resume</button>
-                <button id="skipControlBtn" class="web-control-btn bg-indigo-600">Skip</button>
-                <button id="stopControlBtn" class="web-control-btn bg-red-600">Stop</button>
-                <button id="volumeUpControlBtn" class="web-control-btn bg-gray-600">Vol +</button>
-                <button id="volumeDownControlBtn" class="web-control-btn bg-gray-600">Vol -</button>
-            </div>
-        </div>
+    <!-- Spotify Connect Button -->
+    <a href="#" class="auth-btn spotify-btn" id="spotifyLoginBtn"
+       style="{% if not is_discord_linked or is_spotify_linked %}display: none;{% else %}display: flex;{% endif %}">
+        <svg class="auth-icon" viewBox="0 0 24 24">
+            <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12..."/>
+        </svg>
+        Connect Spotify
+    </a>
+
+    <!-- User Info Status -->
+    <div class="user-info" id="userInfo"
+         style="{% if not is_discord_linked or not is_spotify_linked %}display: none;{% else %}display: flex;{% endif %}">
+        <div class="status-indicator"></div>
+        <span id="userStatus">
+            {% if is_discord_linked and is_spotify_linked %}
+                Discord & Spotify Connected
+            {% elif is_discord_linked %}
+                Discord Connected
+            {% else %}
+                Not Connected
+            {% endif %}
+        </span>
     </div>
+</div>
+
+<!-- Web Control Panel -->
+<div class="web-controls"
+     style="{% if not is_discord_linked or not is_spotify_linked %}display: none;{% else %}display: flex;{% endif %}">
+    <input type="text" id="queueUrlInput" placeholder="Add YouTube/SoundCloud URL" class="queue-input">
+    <button id="addToQueueBtn" class="add-queue-btn">Add to Queue</button>
+
+    <div class="control-grid">
+        <button id="playControlBtn" class="web-control-btn bg-blue-600">Play</button>
+        <button id="pauseControlBtn" class="web-control-btn bg-yellow-600">Pause</button>
+        <button id="resumeControlBtn" class="web-control-btn bg-green-600">Resume</button>
+        <button id="skipControlBtn" class="web-control-btn bg-indigo-600">Skip</button>
+        <button id="stopControlBtn" class="web-control-btn bg-red-600">Stop</button>
+        <button id="volumeUpControlBtn" class="web-control-btn bg-gray-600">Vol +</button>
+        <button id="volumeDownControlBtn" class="web-control-btn bg-gray-600">Vol -</button>
+    </div>
+</div>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
@@ -724,17 +730,17 @@
 
         // Define Flask-generated URLs here
         const urls = {
-            getAuthStatus: {{ url_for('get_auth_status', _external=True) | tojson }},
-            getDiscordUserIdApi: {{ url_for('get_discord_user_id_api', _external=True) | tojson }},
-            loginDiscord: {{ url_for('login_discord', _external=True) | tojson }},
-            addWebQueue: {{ url_for('add_web_queue', _external=True) | tojson }},
-            playWebControl: {{ url_for('play_web_control', _external=True) | tojson }},
-            pauseWebControl: {{ url_for('pause_web_control', _external=True) | tojson }},
-            resumeWebControl: {{ url_for('resume_web_control', _external=True) | tojson }},
-            skipWebControl: {{ url_for('skip_web_control', _external=True) | tojson }},
-            stopWebControl: {{ url_for('stop_web_control', _external=True) | tojson }},
-            volumeUpWebControl: {{ url_for('volume_up_web_control', _external=True) | tojson }},
-            volumeDownWebControl: {{ url_for('volume_down_web_control', _external=True) | tojson }}
+            getAuthStatus: "{{ url_for('get_auth_status_api', _external=True) }}",
+            getDiscordUserIdApi: "{{ url_for('get_discord_user_id_api', _external=True) }}",
+            loginDiscord: "{{ url_for('login_discord', _external=True) }}",
+            addWebQueue: "{{ url_for('add_search_web_control', _external=True) }}",
+            playWebControl: "{{ url_for('play_web_control', _external=True) }}",
+            pauseWebControl: "{{ url_for('pause_web_control', _external=True) }}",
+            resumeWebControl: "{{ url_for('resume_web_control', _external=True) }}",
+            skipWebControl: "{{ url_for('skip_web_control', _external=True) }}",
+            stopWebControl: "{{ url_for('stop_web_control', _external=True) }}",
+            volumeUpWebControl: "{{ url_for('volume_up_web_control', _external=True) }}",
+            volumeDownWebControl: "{{ url_for('volume_down_web_control', _external=True) }}"
         };
 
         // Function to fetch authentication status from Flask backend
@@ -772,7 +778,7 @@
                 // Update Spotify login button link if Discord is linked
                 if (discordUserId) {
                     // Construct Spotify login URL dynamically as it depends on discordUserId
-                    spotifyLoginBtn.href = `/login/spotify/${discordUserId}`;
+                    spotifyLoginBtn.href = "{{ url_for('login_spotify_web', discord_user_id_param=0, _external=True) }}".replace('/0', `/${discordUserId}`);
                 } else {
                     // Fallback if discordUserId is somehow not available
                     spotifyLoginBtn.href = "#"; // Disable link or show error
@@ -856,9 +862,9 @@
             const url = queueUrlInput.value.trim();
             if (url) {
                 const formData = new FormData();
-                formData.append('url', url);
+                formData.append('query', url); 
                 await sendControlCommand(urls.addWebQueue, 'POST', formData);
-                queueUrlInput.value = ''; // Clear input after adding
+                queueUrlInput.value = ''; 
             } else {
                 showFlashMessage('Please enter a URL to add to the queue.', 'error');
             }
@@ -869,6 +875,7 @@
         resumeControlBtn.addEventListener('click', () => sendControlCommand(urls.resumeWebControl));
         skipControlBtn.addEventListener('click', () => sendControlCommand(urls.skipWebControl));
         stopControlBtn.addEventListener('click', () => sendControlCommand(urls.stopWebControl));
+        
         volumeUpControlBtn.addEventListener('click', () => sendControlCommand(urls.volumeUpWebControl));
         volumeDownControlBtn.addEventListener('click', () => sendControlCommand(urls.volumeDownWebControl));
 
@@ -876,15 +883,15 @@
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', () => {
             updateSongDisplay();
-            updateAuthUI(); // Call to update UI based on auth status
+            updateAuthUI(); 
             
             // Fade out Flask-rendered flash messages
             const flashMessages = document.querySelectorAll('.flash-message');
             flashMessages.forEach(msg => {
                 setTimeout(() => {
                     msg.style.opacity = '0';
-                    setTimeout(() => msg.remove(), 500); // Remove after transition
-                }, 5000); // Messages disappear after 5 seconds
+                    setTimeout(() => msg.remove(), 500); 
+                }, 5000); 
             });
         });
     </script>
