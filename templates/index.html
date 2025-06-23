@@ -26,8 +26,8 @@
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 min-h-screen flex items-center justify-center p-4 sm:p-6">
-    <div class="relative bg-gray-800 bg-opacity-70 backdrop-blur-lg p-6 sm:p-8 rounded-2xl shadow-3xl w-full max-w-sm sm:max-w-md text-white border border-purple-700/50 transform transition-all duration-300 scale-95 md:scale-100">
+<body class="bg-black min-h-screen flex items-center justify-center p-4 sm:p-6">
+    <div class="relative bg-neutral-900 bg-opacity-90 backdrop-blur-md p-6 sm:p-8 rounded-xl shadow-3xl w-full max-w-sm sm:max-w-md text-white border border-neutral-700">
         <!-- Flash Messages Container -->
         <div id="flash-messages" class="absolute top-4 left-0 right-0 px-4 z-50">
             {% with messages = get_flashed_messages(with_categories=true) %}
@@ -48,61 +48,78 @@
         <div class="flex flex-col items-center mb-6 mt-10">
             <div class="flex items-center space-x-3 mb-2">
                 <i data-lucide="bot" class="w-8 h-8 text-purple-400"></i>
-                <h1 class="text-3xl font-bold text-purple-200 text-glow">Harmony AI Jams</h1>
+                <h1 class="text-3xl font-bold text-neutral-200 text-glow">Harmony AI Jams</h1>
             </div>
-            <p class="text-sm text-gray-300">AI-Enhanced Discord Music Bot</p>
+            <p class="text-sm text-neutral-400">AI-Enhanced Discord Music Bot</p>
         </div>
 
         <!-- Album Art and Song Info (Placeholder) -->
-        <div class="bg-gray-700/50 rounded-xl overflow-hidden shadow-xl mb-6 aspect-square max-w-[280px] w-full mx-auto">
+        <div class="bg-neutral-800 rounded-xl overflow-hidden shadow-xl mb-6 aspect-square max-w-[280px] w-full mx-auto border border-neutral-700">
             <img src="https://placehold.co/400x400/8A2BE2/FFFFFF?text=Album+Art" alt="Album Art" class="w-full h-full object-cover rounded-xl" onerror="this.onerror=null; this.src='https://placehold.co/400x400/8A2BE2/FFFFFF?text=Placeholder+Art';">
         </div>
 
         <div class="text-center mb-6">
-            <h2 class="text-2xl font-semibold text-white mb-1">City Lights</h2>
-            <p class="text-purple-300 text-lg">Urban Echo</p>
+            <h2 class="text-2xl font-semibold text-white mb-1">ชื่อเพลง (ตัวอย่าง)</h2>
+            <p class="text-neutral-400 text-lg">ชื่อศิลปิน (ตัวอย่าง)</p>
         </div>
 
-        <!-- Progress Bar (Static for now, dynamic with JS) -->
-        <div class="w-full bg-gray-700 rounded-full h-1.5 mb-6">
-            <div class="bg-purple-500 h-1.5 rounded-full" style="width: 45%;"></div>
+        <!-- Progress Bar (Static for now, dynamic with JS if connected to real-time bot status) -->
+        <div class="w-full bg-neutral-700 rounded-full h-1.5 mb-6">
+            <div class="bg-red-500 h-1.5 rounded-full" style="width: 45%;"></div>
         </div>
 
-        <!-- Music Controls -->
-        <div class="flex items-center justify-center space-x-4 mb-8">
-            <a href="{{ url_for('prev_spotify_web_control') }}" class="btn-music-control">
-                <i data-lucide="skip-back" class="w-6 h-6"></i>
-            </a>
-            <a href="{{ url_for('pause_web_control') }}" class="btn-main-control">
-                <i data-lucide="pause" class="w-8 h-8"></i>
-            </a>
-            <a href="{{ url_for('resume_web_control') }}" class="btn-main-control hidden"> <!-- Hidden initially, show with JS when paused -->
-                <i data-lucide="play" class="w-8 h-8"></i>
-            </a>
-            <a href="{{ url_for('skip_web_control') }}" class="btn-music-control">
-                <i data-lucide="skip-forward" class="w-6 h-6"></i>
-            </a>
+        <!-- Spotify Playback Controls -->
+        <div class="mb-6 rounded-lg p-4">
+            <h3 class="text-xl font-semibold mb-3 text-white text-center">ควบคุม Spotify</h3>
+            <div class="flex items-center justify-center space-x-4">
+                <a href="{{ url_for('prev_spotify_web_control') }}" class="btn-music-control">
+                    <i data-lucide="skip-back" class="w-6 h-6"></i>
+                </a>
+                <a href="{{ url_for('pause_web_control') }}" class="btn-main-control" id="spotify_pause_btn">
+                    <i data-lucide="pause" class="w-8 h-8"></i>
+                </a>
+                <a href="{{ url_for('resume_web_control') }}" class="btn-main-control hidden" id="spotify_play_btn">
+                    <i data-lucide="play" class="w-8 h-8"></i>
+                </a>
+                <a href="{{ url_for('skip_web_control') }}" class="btn-music-control">
+                    <i data-lucide="skip-forward" class="w-6 h-6"></i>
+                </a>
+            </div>
         </div>
 
-        <!-- Volume Controls and Stop -->
-        <div class="flex items-center justify-center space-x-6 mb-8">
-            <a href="{{ url_for('volume_down_web_control') }}" class="btn-music-control text-sm px-4 py-2">
-                <i data-lucide="volume-1" class="w-5 h-5"></i>
-            </a>
-            <span class="text-white text-lg font-medium">Volume: 100%</span> <!-- Placeholder -->
-            <a href="{{ url_for('volume_up_web_control') }}" class="btn-music-control text-sm px-4 py-2">
-                <i data-lucide="volume-2" class="w-5 h-5"></i>
-            </a>
-            <a href="{{ url_for('stop_web_control') }}" class="btn-music-control text-red-400 hover:bg-red-700/50">
-                <i data-lucide="square" class="w-5 h-5"></i>
-            </a>
+        <!-- Voice Bot Controls (YouTube/SoundCloud Queue) -->
+        <div class="mb-6 rounded-lg p-4">
+            <h3 class="text-xl font-semibold mb-3 text-white text-center">ควบคุมคิวบอท (YouTube/SoundCloud)</h3>
+            <div class="flex items-center justify-center space-x-6">
+                <a href="{{ url_for('volume_down_web_control') }}" class="btn-music-control text-sm px-4 py-2">
+                    <i data-lucide="volume-1" class="w-5 h-5"></i>
+                </a>
+                <span class="text-white text-lg font-medium">Volume: 100%</span> <!-- Placeholder -->
+                <a href="{{ url_for('volume_up_web_control') }}" class="btn-music-control text-sm px-4 py-2">
+                    <i data-lucide="volume-2" class="w-5 h-5"></i>
+                </a>
+                <a href="{{ url_for('stop_web_control') }}" class="btn-music-control text-red-400 hover:bg-red-700/50">
+                    <i data-lucide="square" class="w-5 h-5"></i>
+                </a>
+            </div>
         </div>
 
+        <!-- Add to Queue Input -->
+        <div class="mb-6 bg-neutral-800 rounded-lg p-4 shadow-inner">
+            <h3 class="text-xl font-semibold mb-3 text-neutral-200">เพิ่มเพลงเข้าคิว (YouTube/SoundCloud)</h3>
+            <form action="{{ url_for('add_web_queue') }}" method="post" class="flex flex-col sm:flex-row gap-3">
+                <input type="text" name="url" placeholder="วางลิงก์เพลง YouTube/SoundCloud ที่นี่..."
+                       class="flex-grow p-3 rounded-lg bg-neutral-700 border border-neutral-600 focus:outline-none focus:ring-2 focus:ring-red-500 text-white placeholder-neutral-400">
+                <button type="submit" class="px-5 py-3 bg-red-600 hover:bg-red-700 rounded-lg shadow-md font-semibold transition duration-300">
+                    เพิ่มเข้าคิว
+                </button>
+            </form>
+        </div>
 
         <!-- Connection Status & Actions -->
-        <div class="bg-gray-700/50 rounded-lg p-4 mb-6 shadow-inner">
-            <div class="flex items-center justify-between py-2 border-b border-gray-600/50 last:border-b-0">
-                <span class="text-gray-300 text-base">Discord Status:</span>
+        <div class="bg-neutral-800 rounded-lg p-4 mb-6 shadow-inner">
+            <div class="flex items-center justify-between py-2 border-b border-neutral-700 last:border-b-0">
+                <span class="text-neutral-400 text-base">Discord Status:</span>
                 {% if is_discord_linked %}
                     <span class="text-green-400 font-medium flex items-center">
                         <i data-lucide="check-circle" class="w-4 h-4 mr-1"></i> เชื่อมโยงแล้ว (ID: {{ discord_user_id }})
@@ -116,7 +133,7 @@
             </div>
             
             <div class="flex items-center justify-between py-2">
-                <span class="text-gray-300 text-base">Spotify Status:</span>
+                <span class="text-neutral-400 text-base">Spotify Status:</span>
                 {% if is_spotify_linked %}
                     <span class="text-green-400 font-medium flex items-center">
                         <i data-lucide="check-circle" class="w-4 h-4 mr-1"></i> เชื่อมโยงแล้ว
@@ -128,25 +145,13 @@
                     {% if is_discord_linked %}
                         <a href="{{ url_for('login_spotify_web', discord_user_id_param=discord_user_id) }}" class="px-3 py-1 bg-green-600 hover:bg-green-700 rounded-md text-sm transition duration-300">เชื่อมต่อ Spotify</a>
                     {% else %}
-                        <span class="text-gray-400 text-sm">เชื่อมต่อ Discord ก่อน</span>
+                        <span class="text-neutral-500 text-sm">เชื่อมต่อ Discord ก่อน</span>
                     {% endif %}
                 {% endif %}
             </div>
         </div>
-
-        <!-- Add to Queue Input -->
-        <div class="mb-6 bg-gray-700/50 rounded-lg p-4 shadow-inner">
-            <h3 class="text-xl font-semibold mb-3 text-purple-200">เพิ่มเพลงเข้าคิว (YouTube/SoundCloud)</h3>
-            <form action="{{ url_for('add_web_queue') }}" method="post" class="flex flex-col sm:flex-row gap-3">
-                <input type="text" name="url" placeholder="วางลิงก์เพลงที่นี่..."
-                       class="flex-grow p-3 rounded-lg bg-gray-600 border border-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder-gray-400">
-                <button type="submit" class="px-5 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg shadow-md font-semibold transition duration-300">
-                    เพิ่มเข้าคิว
-                </button>
-            </form>
-        </div>
         
-        <p class="text-center text-gray-400 text-sm mt-6">
+        <p class="text-center text-neutral-500 text-sm mt-6">
             Discord Spotify Bot by Harmony AI Jams
         </p>
     </div>
@@ -165,31 +170,19 @@
                 }, 5000); // Messages disappear after 5 seconds
             });
 
-            // Update time and volume display (placeholder logic)
-            function updatePlayerDisplay() {
-                // This is where you would fetch real-time data if you had a WebSocket or polling API
-                // For now, it's just illustrative.
-                const volumeText = document.querySelector('.text-lg.font-medium');
-                if (volumeText) {
-                    // Example: if volume was dynamic
-                    // volumeText.textContent = `Volume: ${currentVolume}%`;
-                }
+            // Placeholder for Spotify Playback status (not connected to bot's real-time status yet)
+            const spotifyPlayBtn = document.getElementById('spotify_play_btn');
+            const spotifyPauseBtn = document.getElementById('spotify_pause_btn');
 
-                // Show/hide play/pause button based on playback state
-                const playButton = document.querySelector('a[href*="resume_web_control"]');
-                const pauseButton = document.querySelector('a[href*="pause_web_control"]');
-                // Assume initially paused for demonstration, or fetch actual state
-                const isPlaying = false; // Replace with actual state from backend
-                if (isPlaying) {
-                    playButton?.classList.add('hidden');
-                    pauseButton?.classList.remove('hidden');
-                } else {
-                    playButton?.classList.remove('hidden');
-                    pauseButton?.classList.add('hidden');
-                }
-            }
-            updatePlayerDisplay(); // Initial call
-            // setInterval(updatePlayerDisplay, 5000); // Periodically update if you had dynamic data
+            // Example of how you *would* toggle if you had real-time status:
+            // let isSpotifyPlaying = false; // This would come from your backend API
+            // if (isSpotifyPlaying) {
+            //     spotifyPlayBtn.classList.add('hidden');
+            //     spotifyPauseBtn.classList.remove('hidden');
+            // } else {
+            //     spotifyPlayBtn.classList.remove('hidden');
+            //     spotifyPauseBtn.classList.add('hidden');
+            // }
         });
     </script>
 </body>
