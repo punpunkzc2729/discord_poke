@@ -918,6 +918,13 @@ async def get_auth_status_api():
         "discord_username": discord_username
     })
 
+# NEW: Route for getting Discord User ID
+@app.route("/api/discord_user_id")
+async def get_discord_user_id_api():
+    current_session_id = session.get('session_id')
+    discord_user_id = web_logged_in_users.get(current_session_id)
+    return jsonify({"discord_user_id": discord_user_id})
+
 @app.route("/login/discord")
 def login_discord():
     discord_auth_url = (
@@ -1139,6 +1146,50 @@ async def add_search_web_control():
 
         return jsonify({"status": "success", "message": f"Added '{query}' to the queue!"})
 
+# NEW: Route for playing music from web
+@app.route("/web_control/play")
+async def play_web_control():
+    current_session_id = session.get('session_id')
+    discord_user_id = web_logged_in_users.get(current_session_id)
+    if not discord_user_id:
+        return jsonify({"status": "error", "message": "Please log in with Discord first."}), 401
+
+    target_channel = None
+    if voice_client and voice_client.is_connected():
+        target_channel = voice_client.channel
+    else:
+        try:
+            await bot_ready.wait() 
+            user = bot.get_user(discord_user_id)
+            if user and user.voice and user.voice.channel:
+                target_channel = user.voice.channel
+                if not voice_client or not voice_client.is_connected():
+                    try:
+                        voice_client = await target_channel.connect()
+                        logging.info(f"Bot automatically joined {target_channel.name} for web playback.")
+                    except discord.ClientException as e:
+                        logging.error(f"Could not automatically join voice channel: {e}")
+                        return jsonify({"status": "error", "message": f"❌ Could not automatically join voice channel: {e}"}), 500
+            else:
+                return jsonify({"status": "error", "message": "❌ You are not in a Discord voice channel or the bot cannot access it"}), 400
+        except Exception as e:
+            logging.error(f"Error finding user's voice channel for web play: {e}", exc_info=True)
+            return jsonify({"status": "error", "message": f"❌ Error: {e}"}), 500
+
+    if not target_channel:
+        return jsonify({"status": "error", "message": "❌ Bot is not in a voice channel. Please use the `/join` command in Discord first."}), 400
+
+    if voice_client and voice_client.is_paused():
+        voice_client.resume()
+        return jsonify({"status": "success", "message": "Resumed playing from queue."})
+    elif voice_client and voice_client.is_playing():
+        return jsonify({"status": "warning", "message": "Already playing."})
+    elif queue:
+        await _play_next_in_queue(target_channel)
+        return jsonify({"status": "success", "message": "Started playing from queue."})
+    else:
+        return jsonify({"status": "warning", "message": "Queue is empty. Add songs first."})
+
 
 @app.route("/web_control/pause")
 async def pause_web_control(): # Changed to async def
@@ -1266,16 +1317,18 @@ async def skip_previous_web_control(): # Added this route for previous track
 @app.route("/web_control/set_volume", methods=["GET"]) # Changed to GET to easily pass volume in URL
 async def set_volume_web_control(): # Changed to async def
     global volume, voice_client
-    vol_str = request.args.get("vol")
-    if not vol_str:
-        return jsonify({"status": "error", "message": "No volume level provided."}), 400
+    vol_delta_str = request.args.get("vol") # Changed to vol_delta_str to indicate it's a change
+    
+    if not vol_delta_str:
+        return jsonify({"status": "error", "message": "No volume change value provided."}), 400
     
     try:
-        new_volume = float(vol_str)
-        if not (0.0 <= new_volume <= 2.0):
-            return jsonify({"status": "error", "message": "Volume must be between 0.0 and 2.0"}), 400
+        vol_change = float(vol_delta_str)
+        new_volume = volume + vol_change # Apply the change
         
-        volume = new_volume
+        # Clamp volume between 0.0 and 2.0 (or adjust range as needed)
+        volume = max(0.0, min(2.0, new_volume))
+
         if voice_client and voice_client.source:
             voice_client.source.volume = volume
         
@@ -1285,6 +1338,15 @@ async def set_volume_web_control(): # Changed to async def
     except Exception as e:
         logging.error(f"Error adjusting volume from web: {e}", exc_info=True)
         return jsonify({"status": "error", "message": f"An unexpected error occurred: {e}"}), 500
+
+@app.route("/web_control/volume_up_web_control")
+async def volume_up_web_control():
+    return await set_volume_web_control()
+
+@app.route("/web_control/volume_down_web_control")
+async def volume_down_web_control():
+    return await set_volume_web_control()
+
 
 @app.route("/web_control/toggle_shuffle", methods=["POST"])
 async def toggle_shuffle_web_control():
