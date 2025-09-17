@@ -58,6 +58,17 @@ docker build -t yt-connect-player .
 docker run -p 8000:8000 yt-connect-player
 ```
 
+## Continuous integration & GitHub
+
+This project ships with a lightweight GitHub Actions workflow located at `.github/workflows/ci.yml`. After adding a GitHub remote and pushing your branch, the workflow will install dependencies and run `python -m compileall app` to ensure the application imports cleanly. A typical first-time setup looks like:
+
+```bash
+git remote add origin git@github.com:<your-account>/<your-repo>.git
+git push -u origin main
+```
+
+Each subsequent push or pull request against `main` will automatically trigger the CI run on GitHub.
+
 ## Notes
 
 - The application uses the YouTube IFrame Player API in the browser; therefore the active playback device must keep the page open to stream audio.
